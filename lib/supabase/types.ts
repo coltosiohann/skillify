@@ -12,7 +12,7 @@ export type LevelType = "beginner" | "intermediate" | "advanced";
 export type LearningStyle = "theory" | "practical" | "balanced";
 export type QuizType = "lesson" | "module" | "final";
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       profiles: {
@@ -47,6 +47,7 @@ export interface Database {
           current_streak?: number;
           last_active_date?: string | null;
         };
+        Relationships: [];
       };
       courses: {
         Row: {
@@ -78,6 +79,7 @@ export interface Database {
           detected_level?: LevelType;
           status?: CourseStatus;
         };
+        Relationships: [];
       };
       documents: {
         Row: {
@@ -102,6 +104,7 @@ export interface Database {
           extracted_text?: string | null;
           course_id?: string | null;
         };
+        Relationships: [];
       };
       modules: {
         Row: {
@@ -126,6 +129,7 @@ export interface Database {
           title?: string;
           description?: string;
         };
+        Relationships: [];
       };
       lessons: {
         Row: {
@@ -152,6 +156,7 @@ export interface Database {
           content_markdown?: string;
           resources_json?: Json;
         };
+        Relationships: [];
       };
       quizzes: {
         Row: {
@@ -177,6 +182,7 @@ export interface Database {
         Update: {
           xp_reward?: number;
         };
+        Relationships: [];
       };
       quiz_questions: {
         Row: {
@@ -201,6 +207,7 @@ export interface Database {
           question?: string;
           explanation?: string;
         };
+        Relationships: [];
       };
       quiz_attempts: {
         Row: {
@@ -227,6 +234,7 @@ export interface Database {
           score?: number;
           passed?: boolean;
         };
+        Relationships: [];
       };
       progress: {
         Row: {
@@ -242,6 +250,7 @@ export interface Database {
           completed_at?: string;
         };
         Update: Record<string, never>;
+        Relationships: [];
       };
       subscriptions: {
         Row: {
@@ -269,7 +278,12 @@ export interface Database {
           status?: string;
           current_period_end?: string;
         };
+        Relationships: [];
       };
     };
+    Views: { [_ in never]: never };
+    Functions: { [_ in never]: never };
+    Enums: { [_ in never]: never };
+    CompositeTypes: { [_ in never]: never };
   };
 }
