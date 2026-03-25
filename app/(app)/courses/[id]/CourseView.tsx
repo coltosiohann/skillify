@@ -14,7 +14,7 @@ interface Lesson {
   content_markdown: string;
 }
 
-interface Module {
+export interface Module {
   id: string;
   title: string;
   description: string;

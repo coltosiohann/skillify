@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import CoursesClient from "./CoursesClient";
+import CoursesClient, { Course } from "./CoursesClient";
 
 export default async function CoursesPage() {
   const supabase = await createClient();
@@ -32,7 +32,7 @@ export default async function CoursesPage() {
 
   return (
     <CoursesClient
-      courses={courses ?? []}
+      courses={(courses ?? []) as unknown as Course[]}
       completedLessonIds={Array.from(completedIds)}
     />
   );

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient as createServerClient } from "@/lib/supabase/server";
-import CourseView from "./CourseView";
+import CourseView, { Module } from "./CourseView";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +42,7 @@ export default async function CoursePage({ params }: Props) {
   return (
     <CourseView
       course={course}
-      modules={modules ?? []}
+      modules={(modules ?? []) as unknown as Module[]}
       completedLessonIds={completedLessonIds}
     />
   );

@@ -25,8 +25,16 @@ export default async function LessonPage({ params }: Props) {
 
   if (!lesson) redirect(`/courses/${courseId}`);
 
-  // Verify ownership
-  const mod = lesson.modules as { course_id: string; title: string; order_index: number; courses: { user_id: string; title: string } };
+  // Supabase types don't infer nested joins — cast fully
+  const lessonAny = lesson as unknown as {
+    id: string;
+    title: string;
+    content_markdown: string;
+    resources_json: { type: string; title: string; url: string }[] | null;
+    xp_reward: number;
+    modules: { course_id: string; title: string; order_index: number; courses: { user_id: string; title: string } };
+  };
+  const mod = lessonAny.modules;
   if (mod?.courses?.user_id !== user.id) redirect("/dashboard");
 
   const { data: progress } = await supabase
@@ -38,7 +46,7 @@ export default async function LessonPage({ params }: Props) {
 
   return (
     <LessonView
-      lesson={lesson}
+      lesson={lessonAny}
       courseId={courseId}
       moduleTitle={mod?.title ?? ""}
       courseTitle={mod?.courses?.title ?? ""}

@@ -4,7 +4,24 @@
       "Skill(update-config)",
       "Skill(update-config:*)",
       "Bash(gh api:*)",
-      "Bash(claude update:*)"
+      "Bash(claude update:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npx kill-port:*)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(find C:Userscolto.claudeplugins -name *.json)",
+      "Bash(grep -r \"Verification Required\\\\|verification_workflow\\\\|preview server\" C:Userscolto.claude --include=*.json --include=*.md -l)",
+      "Bash(xargs grep:*)",
+      "Bash(find C:Userscolto.claude -name mcp* -o -name *preview*)",
+      "Bash(find C:UserscoltoAppData -name *.json -path *claude*)",
+      "Bash(find C:UserscoltoAppDataLocal -name claude* -type d)",
+      "Bash(find C:UserscoltoAppDataLocalPackagesClaude_pzs8sxrjxfjjcLocalCacheRoamingClaudeclaude-code -name *.json)",
+      "Bash(find C:UserscoltoAppDataLocalPackagesClaude_pzs8sxrjxfjjcLocalCacheRoamingClaudeclaude-code2.1.78 -name *.json)",
+      "Bash(find C:Userscolto.claudeplugins -name settings*.json -o -name *.md)",
+      "Bash(xargs cat:*)",
+      "Bash(where callback:*)",
+      "Bash(grep -r \"\"Stop\"\" C:Userscolto.claude --include=*.json)",
+      "Bash(ls \"C:\\\\Users\\\\colto\\\\Desktop\\\\website+apps\\\\skillify_new\\\\app\\\\\\(app\\)\")",
+      "Bash(npm run:*)"
     ]
   }
 }

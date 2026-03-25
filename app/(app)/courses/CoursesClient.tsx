@@ -11,9 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-interface Lesson { id: string }
-interface Module { id: string; lessons: Lesson[] }
-interface Course {
+export interface Lesson { id: string }
+export interface Module { id: string; lessons: Lesson[] }
+export interface Course {
   id: string;
   title: string;
   domain: string;
