@@ -90,7 +90,7 @@ export default function Step1Domain({ data, onNext }: Props) {
             onChange={(e) => setDomain(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             placeholder="e.g. Machine Learning, Guitar, Digital Marketing..."
-            className="pl-12 h-14 text-base rounded-2xl border-primary/20 focus-visible:ring-primary/30 bg-white shadow-sm"
+            className="pl-12 h-14 text-base rounded-2xl border-primary/20 focus-visible:ring-primary/30 bg-card shadow-sm"
           />
         </div>
 
@@ -107,7 +107,7 @@ export default function Step1Domain({ data, onNext }: Props) {
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium transition-all duration-200 cursor-pointer border ${
                 category === cat.label
                   ? "bg-primary text-white border-primary shadow-md shadow-primary/25"
-                  : "bg-white border-primary/15 text-foreground hover:border-primary/40 hover:bg-primary/5"
+                  : "bg-card border-primary/15 text-foreground hover:border-primary/40 hover:bg-primary/5"
               }`}
             >
               <span>{cat.emoji}</span>

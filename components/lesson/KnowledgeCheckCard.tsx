@@ -40,12 +40,12 @@ export default function KnowledgeCheckCard({ check, onAnswered }: Props) {
 
       <div className="space-y-2">
         {check.options.map((option, i) => {
-          let style = "border-primary/15 hover:border-primary/30 hover:bg-white/60";
+          let style = "border-primary/15 hover:border-primary/30 hover:bg-primary/5";
           if (answered) {
             if (i === check.correct_index) {
-              style = "border-emerald-400 bg-emerald-50";
+              style = "border-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 dark:border-emerald-600";
             } else if (i === selected) {
-              style = "border-red-400 bg-red-50";
+              style = "border-red-400 bg-red-50 dark:bg-red-900/30 dark:border-red-600";
             } else {
               style = "border-primary/10 opacity-50";
             }

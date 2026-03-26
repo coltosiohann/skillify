@@ -55,7 +55,7 @@ export default function Topbar() {
     .slice(0, 2) ?? "SK";
 
   return (
-    <header className="h-16 border-b border-primary/8 bg-white flex items-center px-6 gap-4 sticky top-0 z-20">
+    <header className="h-16 border-b border-primary/8 bg-card flex items-center px-6 gap-4 sticky top-0 z-20">
       {/* Search */}
       <div className="relative flex-1 max-w-sm hidden md:block">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

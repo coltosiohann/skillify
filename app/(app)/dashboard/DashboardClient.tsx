@@ -25,16 +25,16 @@ interface Profile {
 }
 
 const levelColor: Record<string, string> = {
-  beginner: "bg-emerald-100 text-emerald-700",
-  intermediate: "bg-blue-100 text-blue-700",
-  advanced: "bg-violet-100 text-violet-700",
+  beginner: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+  intermediate: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  advanced: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
 };
 
 const statusColor: Record<string, string> = {
-  active: "bg-emerald-100 text-emerald-700",
-  generating: "bg-amber-100 text-amber-700",
-  completed: "bg-gray-100 text-gray-600",
-  paused: "bg-orange-100 text-orange-700",
+  active: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+  generating: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+  completed: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+  paused: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
 };
 
 const fadeUp = (delay = 0) => ({
@@ -68,21 +68,21 @@ export default function DashboardClient({
       value: `${streak} days`,
       sub: streak > 0 ? "Keep it up!" : "Start today!",
       icon: Flame,
-      color: "bg-amber-100 text-amber-600",
+      color: "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400",
     },
     {
       label: "Active Courses",
       value: activeCourses.length.toString(),
       sub: "in progress",
       icon: BookOpen,
-      color: "bg-emerald-100 text-emerald-600",
+      color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400",
     },
     {
       label: "Completed",
       value: courses.filter((c) => c.status === "completed").length.toString(),
       sub: "courses finished",
       icon: Star,
-      color: "bg-violet-100 text-violet-600",
+      color: "bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400",
     },
   ];
 
@@ -104,7 +104,7 @@ export default function DashboardClient({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((s, i) => (
           <motion.div key={s.label} {...fadeUp(0.05 + i * 0.07)}>
-            <div className="bg-white rounded-2xl border border-primary/8 p-5 shadow-sm hover:shadow-md hover:shadow-primary/6 transition-all duration-200">
+            <div className="bg-card rounded-2xl border border-primary/8 p-5 shadow-sm hover:shadow-md hover:shadow-primary/6 transition-all duration-200">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${s.color}`}>
                 <s.icon className="w-5 h-5" />
               </div>
@@ -118,7 +118,7 @@ export default function DashboardClient({
 
       {/* XP level bar */}
       <motion.div {...fadeUp(0.3)}>
-        <div className="bg-white rounded-2xl border border-primary/8 p-5 shadow-sm">
+        <div className="bg-card rounded-2xl border border-primary/8 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="font-semibold text-foreground text-sm">Level Progress</p>
@@ -152,7 +152,7 @@ export default function DashboardClient({
             {courses.map((course, i) => (
               <motion.div key={course.id} {...fadeUp(0.35 + i * 0.07)}>
                 <Link href={`/courses/${course.id}`}>
-                  <div className="bg-white rounded-2xl border border-primary/8 p-5 shadow-sm hover:shadow-md hover:shadow-primary/8 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer h-full flex flex-col">
+                  <div className="bg-card rounded-2xl border border-primary/8 p-5 shadow-sm hover:shadow-md hover:shadow-primary/8 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer h-full flex flex-col">
                     {/* Domain icon placeholder */}
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-4 text-lg">
                       📚
@@ -199,7 +199,7 @@ export default function DashboardClient({
       {/* Free plan banner */}
       {profile?.plan === "free" && (
         <motion.div {...fadeUp(0.5)}>
-          <div className="bg-gradient-to-r from-primary/8 to-violet-100 rounded-2xl border border-primary/15 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="bg-gradient-to-r from-primary/8 to-violet-100 dark:to-violet-900/20 rounded-2xl border border-primary/15 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex-1">
               <p className="font-semibold text-foreground text-sm">
                 {profile.courses_generated_this_month >= 2

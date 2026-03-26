@@ -39,7 +39,7 @@ export default function LessonProgressPanel({ lessons, currentLessonId, courseId
   return (
     <>
       {/* Desktop sidebar */}
-      <div className="hidden lg:block fixed right-0 top-16 bottom-0 w-72 border-l border-primary/8 bg-white/80 backdrop-blur-sm overflow-y-auto z-10">
+      <div className="hidden lg:block fixed right-0 top-16 bottom-0 w-72 border-l border-primary/8 bg-card/80 backdrop-blur-sm overflow-y-auto z-10">
         <div className="p-4">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -122,7 +122,7 @@ export default function LessonProgressPanel({ lessons, currentLessonId, courseId
                 animate={{ y: 0 }}
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl max-h-[70vh] overflow-y-auto shadow-2xl"
+                className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl max-h-[70vh] overflow-y-auto shadow-2xl"
               >
                 <div className="p-5">
                   <div className="flex items-center justify-between mb-4">

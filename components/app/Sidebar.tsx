@@ -128,7 +128,7 @@ export default function Sidebar() {
       {/* Collapse toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-white border border-primary/15 shadow-sm flex items-center justify-center hover:bg-primary/5 transition-colors cursor-pointer z-10"
+        className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-card border border-primary/15 shadow-sm flex items-center justify-center hover:bg-primary/5 transition-colors cursor-pointer z-10"
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
         {collapsed ? (

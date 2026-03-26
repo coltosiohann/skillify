@@ -83,7 +83,7 @@ export default function Step4Schedule({ data, onNext, onBack }: Props) {
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-150 cursor-pointer border ${
                   durationWeeks === w
                     ? "bg-primary text-white border-primary shadow-md shadow-primary/20"
-                    : "bg-white border-primary/15 text-foreground hover:border-primary/40 hover:bg-primary/5"
+                    : "bg-card border-primary/15 text-foreground hover:border-primary/40 hover:bg-primary/5"
                 }`}
               >
                 {w}w
@@ -107,7 +107,7 @@ export default function Step4Schedule({ data, onNext, onBack }: Props) {
                 className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 cursor-pointer border ${
                   minutesPerDay === m
                     ? "bg-primary text-white border-primary shadow-md shadow-primary/20"
-                    : "bg-white border-primary/15 text-foreground hover:border-primary/40 hover:bg-primary/5"
+                    : "bg-card border-primary/15 text-foreground hover:border-primary/40 hover:bg-primary/5"
                 }`}
               >
                 {m}m
@@ -130,7 +130,7 @@ export default function Step4Schedule({ data, onNext, onBack }: Props) {
                   className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all duration-150 cursor-pointer text-center ${
                     learningStyle === opt.value
                       ? "bg-primary/10 border-primary text-primary"
-                      : "bg-white border-primary/15 text-foreground hover:border-primary/30 hover:bg-primary/5"
+                      : "bg-card border-primary/15 text-foreground hover:border-primary/30 hover:bg-primary/5"
                   }`}
                 >
                   <Icon className={`w-5 h-5 ${learningStyle === opt.value ? "text-primary" : "text-muted-foreground"}`} />
