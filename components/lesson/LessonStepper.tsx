@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, BookOpen, Code2, Layers, Wrench } from "lucide-react";
 import type { LessonContent } from "@/lib/types/lesson-content";
@@ -125,15 +125,16 @@ export default function LessonStepper({ content, onAllSectionsViewed }: Props) {
   const totalSections = content.sections.length;
   const allRevealed = revealedCount >= totalSections;
 
+  // Call onAllSectionsViewed in an effect, never during render
+  useEffect(() => {
+    if (revealedCount >= totalSections) {
+      onAllSectionsViewed();
+    }
+  }, [revealedCount, totalSections, onAllSectionsViewed]);
+
   const revealNext = useCallback(() => {
-    setRevealedCount((c) => {
-      const next = Math.min(c + 1, totalSections);
-      if (next >= totalSections) {
-        onAllSectionsViewed();
-      }
-      return next;
-    });
-  }, [totalSections, onAllSectionsViewed]);
+    setRevealedCount((c) => Math.min(c + 1, totalSections));
+  }, [totalSections]);
 
   const handleCheckAnswered = useCallback(
     (afterSection: string) => {

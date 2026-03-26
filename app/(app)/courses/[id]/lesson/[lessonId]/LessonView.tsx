@@ -235,7 +235,7 @@ export default function LessonView({
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 lg:mr-72">
+    <div className="max-w-3xl mx-auto px-4 py-8 lg:pr-6 lg:mr-72 lg:ml-0 xl:ml-12">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6 flex-wrap">
         <Link
