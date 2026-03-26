@@ -7,7 +7,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -95,9 +94,9 @@ export default function Topbar() {
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 rounded-xl border-primary/10 shadow-lg shadow-primary/10">
-            <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+            <div className="px-2 py-1.5 text-xs text-muted-foreground">
               {profile?.full_name ?? "My Account"}
-            </DropdownMenuLabel>
+            </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer" onClick={() => window.location.href = "/profile"}>
               Profile
