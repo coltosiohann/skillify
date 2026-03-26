@@ -13,6 +13,8 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  Bell,
+  User,
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -24,6 +26,8 @@ const navItems = [
   { href: "/courses", icon: BookOpen, label: "My Courses" },
   { href: "/onboarding", icon: PlusCircle, label: "New Course" },
   { href: "/achievements", icon: Trophy, label: "Achievements" },
+  { href: "/notifications", icon: Bell, label: "Notifications" },
+  { href: "/profile", icon: User, label: "Profile" },
   { href: "/settings", icon: Settings, label: "Settings" },
 ];
 

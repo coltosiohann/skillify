@@ -81,10 +81,10 @@ export default function Topbar() {
         )}
 
         {/* Notifications */}
-        <button className="relative w-9 h-9 rounded-xl flex items-center justify-center hover:bg-primary/5 transition-colors cursor-pointer" aria-label="Notifications">
+        <Link href="/notifications" className="relative w-9 h-9 rounded-xl flex items-center justify-center hover:bg-primary/5 transition-colors cursor-pointer" aria-label="Notifications">
           <Bell className="w-5 h-5 text-muted-foreground" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
-        </button>
+        </Link>
 
         {/* Avatar menu */}
         <DropdownMenu>
@@ -99,6 +99,9 @@ export default function Topbar() {
               {profile?.full_name ?? "My Account"}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem className="cursor-pointer" onClick={() => window.location.href = "/profile"}>
+              Profile
+            </DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer" onClick={() => window.location.href = "/settings"}>
               Settings
             </DropdownMenuItem>

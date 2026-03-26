@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { CheckCircle, BookOpen, Zap, Bell, Flame, Trophy } from "lucide-react";
 import Link from "next/link";
 
-interface ProgressWithLesson {
+export interface ProgressWithLesson {
   lesson_id: string;
   completed_at: string;
   lessons: { title: string; xp_reward: number } | null;

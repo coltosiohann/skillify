@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import NotificationsClient from "./NotificationsClient";
+import NotificationsClient, { ProgressWithLesson } from "./NotificationsClient";
 
 export default async function NotificationsPage() {
   const supabase = await createClient();
@@ -31,10 +31,4 @@ export default async function NotificationsPage() {
       courses={coursesRes.data ?? []}
     />
   );
-}
-
-export interface ProgressWithLesson {
-  lesson_id: string;
-  completed_at: string;
-  lessons: { title: string; xp_reward: number } | null;
 }
