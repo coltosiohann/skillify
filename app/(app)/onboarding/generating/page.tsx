@@ -158,9 +158,12 @@ export default function GeneratingPage() {
             module_id: modRow.id,
             title: lesson.title,
             content_markdown: lesson.content_markdown ?? "",
+            content_json: lesson.content_json ?? null,
             resources_json: lesson.resources_json ?? [],
             order_index: lesson.order_index ?? 0,
             xp_reward: lesson.xp_reward ?? 50,
+            estimated_minutes: lesson.estimated_minutes ?? 5,
+            difficulty: lesson.difficulty ?? "standard",
           });
           if (lessonErr) throw lessonErr;
         }

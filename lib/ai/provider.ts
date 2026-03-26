@@ -19,7 +19,7 @@ export async function generateText(
     const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const msg = await claude.messages.create({
       model: "claude-opus-4-6",
-      max_tokens: 8192,
+      max_tokens: 16384,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
     });
@@ -34,7 +34,7 @@ export async function generateText(
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      max_tokens: 8192,
+      max_tokens: 16384,
     });
     return res.choices[0].message.content ?? "";
   }
@@ -53,7 +53,7 @@ export async function streamText(
     const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const stream = claude.messages.stream({
       model: "claude-opus-4-6",
-      max_tokens: 8192,
+      max_tokens: 16384,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
     });
@@ -77,7 +77,7 @@ export async function streamText(
         { role: "user", content: userPrompt },
       ],
       stream: true,
-      max_tokens: 8192,
+      max_tokens: 16384,
     });
     for await (const chunk of stream) {
       const text = chunk.choices[0]?.delta?.content ?? "";

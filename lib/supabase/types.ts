@@ -137,9 +137,12 @@ export type Database = {
           module_id: string;
           title: string;
           content_markdown: string;
+          content_json: Json | null;
           resources_json: Json;
           order_index: number;
           xp_reward: number;
+          estimated_minutes: number;
+          difficulty: string;
           created_at: string;
         };
         Insert: {
@@ -147,14 +150,20 @@ export type Database = {
           module_id: string;
           title: string;
           content_markdown: string;
+          content_json?: Json | null;
           resources_json?: Json;
           order_index: number;
           xp_reward?: number;
+          estimated_minutes?: number;
+          difficulty?: string;
           created_at?: string;
         };
         Update: {
           content_markdown?: string;
+          content_json?: Json | null;
           resources_json?: Json;
+          estimated_minutes?: number;
+          difficulty?: string;
         };
         Relationships: [];
       };
