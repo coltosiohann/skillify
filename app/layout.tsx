@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { THEME_KEY } from "@/lib/theme";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -33,6 +35,17 @@ export const metadata: Metadata = {
   },
 };
 
+// Inline script to apply theme before first paint — prevents white flash
+const themeScript = `
+(function() {
+  try {
+    var t = localStorage.getItem(${JSON.stringify(THEME_KEY)}) || 'system';
+    var dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (dark) document.documentElement.classList.add('dark');
+  } catch(e) {}
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -42,10 +55,17 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${jakarta.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        {/* Anti-FOUC: runs before React hydration */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        {children}
-        <Toaster richColors position="bottom-right" />
+        <ThemeProvider>
+          {children}
+          <Toaster richColors position="bottom-right" />
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -14,6 +14,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 
 interface Profile {
   full_name: string | null;
@@ -78,6 +79,9 @@ export default function Topbar() {
             </div>
           </div>
         )}
+
+        {/* Theme toggle */}
+        <ThemeToggle variant="icon" />
 
         {/* Notifications */}
         <Link href="/notifications" className="relative w-9 h-9 rounded-xl flex items-center justify-center hover:bg-primary/5 transition-colors cursor-pointer" aria-label="Notifications">

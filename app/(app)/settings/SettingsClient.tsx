@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User, Bell, Palette, CreditCard, Camera, Save, Check,
@@ -78,7 +79,6 @@ export default function SettingsClient({ profile, email, userId }: Props) {
 
   // Appearance
   const [reminderTime, setReminderTime] = useState("09:00");
-  const [theme, setTheme] = useState<"light" | "system">("light");
 
   async function saveProfile() {
     setSaving(true);
@@ -302,31 +302,12 @@ export default function SettingsClient({ profile, email, userId }: Props) {
               >
                 <h2 className="font-heading font-bold text-foreground">Appearance</h2>
 
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-foreground mb-3">Theme</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { value: "light" as const, label: "Light", preview: "bg-white border-2" },
-                      { value: "system" as const, label: "System", preview: "bg-gradient-to-br from-white to-gray-900 border-2" },
-                    ].map((t) => (
-                      <button
-                        key={t.value}
-                        onClick={() => setTheme(t.value)}
-                        className={`p-4 rounded-2xl border-2 transition-all cursor-pointer text-left ${
-                          theme === t.value ? "border-primary shadow-md shadow-primary/15" : "border-primary/10 hover:border-primary/30"
-                        }`}
-                      >
-                        <div className={`h-12 rounded-lg mb-3 ${t.preview} border border-primary/10`} />
-                        <p className="text-sm font-medium text-foreground">{t.label}</p>
-                        {theme === t.value && (
-                          <div className="flex items-center gap-1 mt-1 text-xs text-primary font-medium">
-                            <Check className="w-3 h-3" /> Active
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Full dark mode coming soon.</p>
+                <div className="space-y-3">
+                  <p className="text-sm font-medium text-foreground">Theme</p>
+                  <ThemeToggle variant="card" />
+                  <p className="text-xs text-muted-foreground">
+                    System automatically matches your device&apos;s light/dark preference.
+                  </p>
                 </div>
 
                 <div className="space-y-3">
