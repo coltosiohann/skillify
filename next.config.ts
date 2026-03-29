@@ -6,17 +6,18 @@ const nextConfig: NextConfig = {
 };
 
 export default withSentryConfig(nextConfig, {
-  // Sentry organization and project from dashboard
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
-  // Suppress source map upload warnings in CI
-  silent: !process.env.CI,
-  // Upload source maps only in production builds
-  widenClientFileUpload: true,
-  // Disable source maps in dev to speed up builds
+  silent: true,
+  // Disable source map upload until SENTRY_AUTH_TOKEN is configured in Vercel
   sourcemaps: {
-    disable: process.env.NODE_ENV !== "production",
+    disable: true,
   },
-  // Automatically tree-shake Sentry logger statements
-  disableLogger: true,
+  // Replaces deprecated disableLogger
+  webpack: {
+    treeshake: {
+      removeDebugLogging: true,
+    },
+  },
+  telemetry: false,
 });
