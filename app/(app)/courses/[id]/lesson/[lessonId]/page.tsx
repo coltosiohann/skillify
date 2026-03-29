@@ -29,6 +29,7 @@ export default async function LessonPage({ params }: Props) {
 
   const lessonAny = lesson as unknown as {
     id: string;
+    module_id: string;
     title: string;
     content_markdown: string;
     content_json: unknown;
@@ -56,7 +57,7 @@ export default async function LessonPage({ params }: Props) {
 
   // Fetch all user progress for this course
   const allLessonIds: string[] = [];
-  const orderedLessons: { id: string; title: string; moduleTitle: string; moduleIndex: number }[] = [];
+  const orderedLessons: { id: string; title: string; moduleTitle: string; moduleIndex: number; moduleId: string }[] = [];
 
   for (const m of (allModules ?? []).sort((a, b) => a.order_index - b.order_index)) {
     const lessons = ((m as unknown as { lessons: { id: string; title: string; order_index: number }[] }).lessons ?? [])
@@ -68,16 +69,31 @@ export default async function LessonPage({ params }: Props) {
         title: l.title,
         moduleTitle: m.title,
         moduleIndex: m.order_index,
+        moduleId: m.id,
       });
     }
   }
 
-  // Fetch progress for all lessons
-  const { data: progressRows } = await supabase
-    .from("progress")
-    .select("lesson_id")
-    .eq("user_id", user.id)
-    .in("lesson_id", allLessonIds.length > 0 ? allLessonIds : ["__none__"]);
+  // Fetch progress, bookmark, and note in parallel
+  const [{ data: progressRows }, { data: bookmarkRow }, { data: noteRow }] = await Promise.all([
+    supabase
+      .from("progress")
+      .select("lesson_id")
+      .eq("user_id", user.id)
+      .in("lesson_id", allLessonIds.length > 0 ? allLessonIds : ["__none__"]),
+    supabase
+      .from("bookmarks")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("lesson_id", lessonId)
+      .maybeSingle(),
+    supabase
+      .from("lesson_notes")
+      .select("content")
+      .eq("user_id", user.id)
+      .eq("lesson_id", lessonId)
+      .maybeSingle(),
+  ]);
 
   const completedSet = new Set((progressRows ?? []).map((p) => p.lesson_id));
 
@@ -98,6 +114,12 @@ export default async function LessonPage({ params }: Props) {
       ? orderedLessons[currentIdx + 1].id
       : null;
 
+  // Lessons in the same module (for module-completion detection)
+  const moduleId = lessonAny.module_id;
+  const currentModuleLessonIds = orderedLessons
+    .filter((l) => l.moduleId === moduleId)
+    .map((l) => l.id);
+
   return (
     <LessonView
       lesson={{
@@ -111,9 +133,13 @@ export default async function LessonPage({ params }: Props) {
         difficulty: lessonAny.difficulty ?? "standard",
       }}
       courseId={courseId}
+      moduleId={moduleId}
+      currentModuleLessonIds={currentModuleLessonIds}
       moduleTitle={mod?.title ?? ""}
       courseTitle={mod?.courses?.title ?? ""}
       isCompleted={completedSet.has(lessonId)}
+      isBookmarked={!!bookmarkRow}
+      initialNote={(noteRow as { content?: string } | null)?.content ?? ""}
       userId={user.id}
       prevLessonId={prevLessonId}
       nextLessonId={nextLessonId}

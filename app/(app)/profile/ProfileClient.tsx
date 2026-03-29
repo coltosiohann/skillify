@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   Zap, Flame, BookOpen, Trophy, Star, Camera, Save, Check,
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import Link from "next/link";
+import { getCurrentLevel, getNextLevel } from "@/lib/levels";
 
 interface Profile {
   full_name: string | null;
@@ -46,22 +47,6 @@ interface Props {
   progress: ProgressRow[];
 }
 
-const LEVELS = [
-  { name: "Newcomer", min: 0, max: 499, color: "from-gray-400 to-gray-500", icon: Star },
-  { name: "Learner", min: 500, max: 1499, color: "from-emerald-400 to-emerald-600", icon: BookOpen },
-  { name: "Explorer", min: 1500, max: 3499, color: "from-blue-400 to-blue-600", icon: Target },
-  { name: "Scholar", min: 3500, max: 6999, color: "from-violet-400 to-violet-600", icon: Brain },
-  { name: "Master", min: 7000, max: 14999, color: "from-amber-400 to-amber-500", icon: GraduationCap },
-  { name: "Champion", min: 15000, max: 29999, color: "from-orange-400 to-red-500", icon: Trophy },
-  { name: "Legend", min: 30000, max: Infinity, color: "from-rose-500 to-purple-600", icon: Crown },
-];
-
-function getCurrentLevel(xp: number) {
-  return LEVELS.findLast((l) => xp >= l.min) ?? LEVELS[0];
-}
-function getNextLevel(xp: number) {
-  return LEVELS.find((l) => xp < l.min) ?? null;
-}
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 18 },
@@ -83,9 +68,49 @@ const levelColor: Record<string, string> = {
 
 export default function ProfileClient({ profile, email, courses, progress }: Props) {
   const [fullName, setFullName] = useState(profile?.full_name ?? "");
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("Please select an image file"); return; }
+    if (file.size > 2 * 1024 * 1024) { toast.error("Image must be under 2 MB"); return; }
+
+    setUploadingAvatar(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `${user.id}/avatar.${ext}`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (uploadErr) throw uploadErr;
+
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+      const cacheBusted = `${publicUrl}?t=${Date.now()}`;
+
+      const { error: updateErr } = await supabase
+        .from("profiles")
+        .update({ avatar_url: cacheBusted } as never)
+        .eq("id", user.id);
+      if (updateErr) throw updateErr;
+
+      setAvatarUrl(cacheBusted);
+      toast.success("Avatar updated!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
 
   const xp = profile?.total_xp ?? 0;
   const streak = profile?.current_streak ?? 0;
@@ -151,14 +176,27 @@ export default function ProfileClient({ profile, email, courses, progress }: Pro
           <motion.div {...fadeUp(0.05)} className="glass-card rounded-3xl p-6 border border-primary/10 text-center">
             <div className="relative inline-block mb-4">
               <Avatar className="w-20 h-20 ring-2 ring-primary/25 mx-auto">
-                <AvatarImage src={profile?.avatar_url ?? undefined} />
+                <AvatarImage src={avatarUrl ?? undefined} />
                 <AvatarFallback className="bg-primary text-white text-xl font-bold">{initials}</AvatarFallback>
               </Avatar>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarUpload}
+              />
               <button
-                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center shadow cursor-pointer hover:bg-[#6d28d9] transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center shadow cursor-pointer hover:bg-[#6d28d9] transition-colors disabled:opacity-60"
                 aria-label="Change avatar"
               >
-                <Camera className="w-3.5 h-3.5" />
+                {uploadingAvatar ? (
+                  <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Camera className="w-3.5 h-3.5" />
+                )}
               </button>
             </div>
 

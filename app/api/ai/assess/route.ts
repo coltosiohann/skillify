@@ -5,9 +5,18 @@ import {
   getEvaluateLevelPrompt,
   type AssessmentQuestion,
 } from "@/lib/prompts/level-assessor";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 function parseJSON(raw: string) {
   return JSON.parse(raw.replace(/```json\s*|```/g, "").trim());
+}
+
+function getIdentifier(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown"
+  );
 }
 
 // GET /api/ai/assess?domain=X — generate assessment questions
@@ -15,6 +24,18 @@ export async function GET(req: NextRequest) {
   const domain = req.nextUrl.searchParams.get("domain");
   if (!domain) {
     return NextResponse.json({ error: "domain is required" }, { status: 400 });
+  }
+
+  // Rate limit: 10 assessments per hour per IP
+  const rl = await checkRateLimit(getIdentifier(req), { limit: 10, windowSec: 3600, prefix: "assess-get" });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
+      }
+    );
   }
 
   try {
@@ -32,6 +53,18 @@ export async function GET(req: NextRequest) {
 
 // POST /api/ai/assess — evaluate level from answers
 export async function POST(req: NextRequest) {
+  // Rate limit: 10 evaluations per hour per IP
+  const rl = await checkRateLimit(getIdentifier(req), { limit: 10, windowSec: 3600, prefix: "assess-post" });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
+      }
+    );
+  }
+
   try {
     const { domain, questions, answers } = (await req.json()) as {
       domain: string;

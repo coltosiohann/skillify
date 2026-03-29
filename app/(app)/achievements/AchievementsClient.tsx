@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Zap, Flame, BookOpen, Trophy, Star, Lock, CheckCircle, Target, Award, Rocket, Crown, GraduationCap, Brain } from "lucide-react";
+import { Zap, Flame, BookOpen, Trophy, Lock, CheckCircle, Award, Rocket, Star, Target, GraduationCap, Brain, Crown } from "lucide-react";
+import { LEVELS, getCurrentLevel, getNextLevel } from "@/lib/levels";
 
 interface Profile {
   full_name: string | null;
@@ -11,33 +12,12 @@ interface Profile {
   plan: string;
   created_at: string;
 }
-
 interface Course { id: string; status: string }
 interface ProgressRow { lesson_id: string; completed_at: string }
-
 interface Props {
   profile: Profile | null;
   courses: Course[];
   progress: ProgressRow[];
-}
-
-// XP level thresholds
-const LEVELS = [
-  { name: "Newcomer",    min: 0,     max: 499,   color: "from-gray-400 to-gray-500",       icon: Star },
-  { name: "Learner",     min: 500,   max: 1499,  color: "from-emerald-400 to-emerald-600", icon: BookOpen },
-  { name: "Explorer",   min: 1500,  max: 3499,  color: "from-blue-400 to-blue-600",       icon: Target },
-  { name: "Scholar",    min: 3500,  max: 6999,  color: "from-violet-400 to-violet-600",   icon: Brain },
-  { name: "Master",     min: 7000,  max: 14999, color: "from-amber-400 to-amber-500",     icon: GraduationCap },
-  { name: "Champion",   min: 15000, max: 29999, color: "from-orange-400 to-red-500",      icon: Trophy },
-  { name: "Legend",     min: 30000, max: Infinity, color: "from-rose-500 to-purple-600",  icon: Crown },
-];
-
-function getCurrentLevel(xp: number) {
-  return LEVELS.findLast((l) => xp >= l.min) ?? LEVELS[0];
-}
-
-function getNextLevel(xp: number) {
-  return LEVELS.find((l) => xp < l.min) ?? null;
 }
 
 export default function AchievementsClient({ profile, courses, progress }: Props) {

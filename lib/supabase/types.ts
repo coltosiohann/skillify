@@ -26,6 +26,11 @@ export type Database = {
           current_streak: number;
           last_active_date: string | null;
           created_at: string;
+          notification_preferences: Json | null;
+          weekly_xp_goal: number;
+          total_minutes_learned: number;
+          streak_freeze_used_at: string | null;
+          streak_freeze_count: number;
         };
         Insert: {
           id: string;
@@ -37,6 +42,11 @@ export type Database = {
           current_streak?: number;
           last_active_date?: string | null;
           created_at?: string;
+          notification_preferences?: Json | null;
+          weekly_xp_goal?: number;
+          total_minutes_learned?: number;
+          streak_freeze_used_at?: string | null;
+          streak_freeze_count?: number;
         };
         Update: {
           full_name?: string | null;
@@ -46,6 +56,11 @@ export type Database = {
           total_xp?: number;
           current_streak?: number;
           last_active_date?: string | null;
+          notification_preferences?: Json | null;
+          weekly_xp_goal?: number;
+          total_minutes_learned?: number;
+          streak_freeze_used_at?: string | null;
+          streak_freeze_count?: number;
         };
         Relationships: [];
       };
@@ -289,9 +304,68 @@ export type Database = {
         };
         Relationships: [];
       };
+      bookmarks: {
+        Row: {
+          id: string;
+          user_id: string;
+          lesson_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          lesson_id: string;
+          created_at?: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      lesson_notes: {
+        Row: {
+          id: string;
+          user_id: string;
+          lesson_id: string;
+          content: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          lesson_id: string;
+          content?: string;
+          updated_at?: string;
+        };
+        Update: {
+          content?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      rate_limits: {
+        Row: {
+          key: string;
+          count: number;
+          reset_at: string;
+        };
+        Insert: {
+          key: string;
+          count?: number;
+          reset_at: string;
+        };
+        Update: {
+          count?: number;
+          reset_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
+    Functions: {
+      get_weekly_leaderboard: {
+        Args: { limit_count?: number };
+        Returns: { user_id: string; weekly_xp: number }[];
+      };
+    };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };
   };

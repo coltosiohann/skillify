@@ -2,10 +2,13 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { BookOpen, Zap, Flame, PlusCircle, ArrowRight, Clock, Star } from "lucide-react";
+import { BookOpen, Zap, Flame, PlusCircle, ArrowRight, Clock, Star, Play, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { getCurrentLevel, getLevelProgress } from "@/lib/levels";
+import OnboardingTour from "@/components/app/OnboardingTour";
 
+interface Lesson { id: string; order_index: number }
+interface Module { id: string; order_index: number; lessons: Lesson[] }
 interface Course {
   id: string;
   title: string;
@@ -14,6 +17,7 @@ interface Course {
   status: string;
   duration_weeks: number;
   created_at: string;
+  modules: Module[];
 }
 
 interface Profile {
@@ -37,6 +41,23 @@ const statusColor: Record<string, string> = {
   paused: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
 };
 
+// Domain → emoji map for course cards (#23)
+function domainIcon(domain: string): string {
+  const d = domain.toLowerCase();
+  if (/python|javascript|typescript|coding|program|software|web|react|node|dev/.test(d)) return "💻";
+  if (/design|ui|ux|figma|graphic|art|creative|illustration/.test(d)) return "🎨";
+  if (/fitness|workout|gym|sport|run|yoga|health/.test(d)) return "💪";
+  if (/music|guitar|piano|drum|sing|audio/.test(d)) return "🎵";
+  if (/language|spanish|french|german|japanese|chinese|english/.test(d)) return "🌍";
+  if (/math|calculus|algebra|statistics|physics/.test(d)) return "📐";
+  if (/cooking|food|chef|recipe|baking/.test(d)) return "🍳";
+  if (/business|marketing|finance|startup|entrepreneur/.test(d)) return "📈";
+  if (/science|biology|chemistry|anatomy/.test(d)) return "🔬";
+  if (/history|geography|social/.test(d)) return "🏛️";
+  if (/photo|video|film/.test(d)) return "📸";
+  return "📚";
+}
+
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
@@ -45,51 +66,63 @@ const fadeUp = (delay = 0) => ({
 
 export default function DashboardClient({
   profile,
+  emailFallback,
   courses,
+  completedLessonIds,
+  weeklyXp,
+  weeklyGoal,
+  totalMinutesLearned,
 }: {
   profile: Profile | null;
+  emailFallback: string;
   courses: Course[];
+  completedLessonIds: string[];
+  weeklyXp: number;
+  weeklyGoal: number;
+  totalMinutesLearned: number;
 }) {
-  const firstName = profile?.full_name?.split(" ")[0] ?? "Learner";
+  const completedSet = new Set(completedLessonIds);
+  const firstName = profile?.full_name?.split(" ")[0] ?? emailFallback;
   const xp = profile?.total_xp ?? 0;
   const streak = profile?.current_streak ?? 0;
   const activeCourses = courses.filter((c) => c.status === "active" || c.status === "generating");
 
+  // #6 — use shared level system
+  const currentLevel = getCurrentLevel(xp);
+  const { pct: levelPct, xpInLevel, xpNeeded } = getLevelProgress(xp);
+
+  // #17 — find next incomplete lesson across all active courses
+  const nextLesson = (() => {
+    for (const course of courses) {
+      if (course.status !== "active") continue;
+      const sorted = [...(course.modules ?? [])]
+        .sort((a, b) => a.order_index - b.order_index)
+        .flatMap((m) =>
+          [...(m.lessons ?? [])].sort((a, b) => a.order_index - b.order_index)
+        );
+      const incomplete = sorted.find((l) => !completedSet.has(l.id));
+      if (incomplete) return { lessonId: incomplete.id, courseId: course.id, courseTitle: course.title };
+    }
+    return null;
+  })();
+
+  const totalMinutes = totalMinutesLearned;
+  const timeLabel = totalMinutes >= 60
+    ? `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`
+    : `${totalMinutes}m`;
+
   const stats = [
-    {
-      label: "Total XP",
-      value: xp.toLocaleString(),
-      sub: "experience points",
-      icon: Zap,
-      color: "bg-primary/10 text-primary",
-    },
-    {
-      label: "Current Streak",
-      value: `${streak} days`,
-      sub: streak > 0 ? "Keep it up!" : "Start today!",
-      icon: Flame,
-      color: "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400",
-    },
-    {
-      label: "Active Courses",
-      value: activeCourses.length.toString(),
-      sub: "in progress",
-      icon: BookOpen,
-      color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400",
-    },
-    {
-      label: "Completed",
-      value: courses.filter((c) => c.status === "completed").length.toString(),
-      sub: "courses finished",
-      icon: Star,
-      color: "bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400",
-    },
+    { label: "Total XP", value: xp.toLocaleString(), sub: "experience points", icon: Zap, color: "bg-primary/10 text-primary" },
+    { label: "Current Streak", value: `${streak} days`, sub: streak > 0 ? "Keep it up!" : "Start today!", icon: Flame, color: "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400" },
+    { label: "Time Learned", value: timeLabel, sub: "total study time", icon: Timer, color: "bg-sky-100 text-sky-600 dark:bg-sky-900/40 dark:text-sky-400" },
+    { label: "Completed", value: courses.filter((c) => c.status === "completed").length.toString(), sub: "courses finished", icon: Star, color: "bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400" },
   ];
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
+      <OnboardingTour />
       {/* Greeting */}
-      <motion.div {...fadeUp(0)}>
+      <motion.div {...fadeUp(0)} data-tour="dashboard-greeting">
         <h1 className="font-heading text-3xl font-extrabold text-foreground mb-1">
           Welcome back, {firstName}! 👋
         </h1>
@@ -100,8 +133,26 @@ export default function DashboardClient({
         </p>
       </motion.div>
 
+      {/* #17 — Continue where you left off */}
+      {nextLesson && (
+        <motion.div {...fadeUp(0.05)}>
+          <Link href={`/courses/${nextLesson.courseId}/lesson/${nextLesson.lessonId}`}>
+            <div className="bg-gradient-to-r from-primary to-violet-600 rounded-2xl p-5 flex items-center gap-4 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200 cursor-pointer group">
+              <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 group-hover:bg-white/30 transition-colors">
+                <Play className="w-5 h-5 text-white fill-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-white/70 font-medium mb-0.5">Continue Learning</p>
+                <p className="text-sm font-semibold text-white truncate">{nextLesson.courseTitle}</p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-white/70 group-hover:text-white group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+            </div>
+          </Link>
+        </motion.div>
+      )}
+
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-tour="dashboard-stats">
         {stats.map((s, i) => (
           <motion.div key={s.label} {...fadeUp(0.05 + i * 0.07)}>
             <div className="bg-card rounded-2xl border border-primary/8 p-5 shadow-sm hover:shadow-md hover:shadow-primary/6 transition-all duration-200">
@@ -116,26 +167,34 @@ export default function DashboardClient({
         ))}
       </div>
 
-      {/* XP level bar */}
+      {/* #6 — Fixed XP level bar using shared system + #20 Weekly XP goal */}
       <motion.div {...fadeUp(0.3)}>
-        <div className="bg-card rounded-2xl border border-primary/8 p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="font-semibold text-foreground text-sm">Level Progress</p>
-              <p className="text-xs text-muted-foreground">
-                Level {Math.floor(xp / 500) + 1} — {["Beginner", "Explorer", "Learner", "Skilled", "Expert", "Master"][Math.min(Math.floor(xp / 500), 5)]}
-              </p>
+        <div className="grid sm:grid-cols-2 gap-4">
+          {/* Level progress */}
+          <div className="bg-card rounded-2xl border border-primary/8 p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="font-semibold text-foreground text-sm">Level Progress</p>
+                <p className="text-xs text-muted-foreground">{currentLevel.name}</p>
+              </div>
+              <span className="text-sm font-bold text-primary">
+                {xpNeeded > 0 ? `${xpInLevel.toLocaleString()} / ${xpNeeded.toLocaleString()} XP` : "Max Level!"}
+              </span>
             </div>
-            <span className="text-sm font-bold text-primary">{xp % 500}/500 XP</span>
+            <div className="h-2 bg-primary/10 rounded-full overflow-hidden">
+              <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${levelPct}%` }} />
+            </div>
           </div>
-          <div className="h-2 bg-primary/10 rounded-full overflow-hidden">
-            <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${(xp % 500) / 5}%` }} />
+
+          {/* Weekly XP goal ring */}
+          <div data-tour="dashboard-weekly-goal">
+            <WeeklyXpGoal weeklyXp={weeklyXp} weeklyGoal={weeklyGoal} />
           </div>
         </div>
       </motion.div>
 
       {/* Courses */}
-      <motion.div {...fadeUp(0.35)}>
+      <motion.div {...fadeUp(0.35)} data-tour="dashboard-courses">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-heading font-bold text-xl text-foreground">My Courses</h2>
           <Link href="/courses">
@@ -149,36 +208,59 @@ export default function DashboardClient({
           <EmptyState />
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {courses.map((course, i) => (
-              <motion.div key={course.id} {...fadeUp(0.35 + i * 0.07)}>
-                <Link href={`/courses/${course.id}`}>
-                  <div className="bg-card rounded-2xl border border-primary/8 p-5 shadow-sm hover:shadow-md hover:shadow-primary/8 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer h-full flex flex-col">
-                    {/* Domain icon placeholder */}
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-4 text-lg">
-                      📚
+            {courses.map((course, i) => {
+              // #9 — compute progress per course
+              const allLessons = (course.modules ?? []).flatMap((m) => m.lessons ?? []);
+              const completedCount = allLessons.filter((l) => completedSet.has(l.id)).length;
+              const totalCount = allLessons.length;
+              const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+              return (
+                <motion.div key={course.id} {...fadeUp(0.35 + i * 0.07)}>
+                  <Link href={`/courses/${course.id}`}>
+                    <div className="bg-card rounded-2xl border border-primary/8 p-5 shadow-sm hover:shadow-md hover:shadow-primary/8 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer h-full flex flex-col">
+                      {/* #23 — domain icon */}
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-4 text-lg">
+                        {domainIcon(course.domain)}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-heading font-bold text-foreground text-sm leading-snug mb-2 line-clamp-2">
+                          {course.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground mb-3">{course.domain}</p>
+                      </div>
+                      {/* #9 — progress bar */}
+                      {totalCount > 0 && (
+                        <div className="mb-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-muted-foreground">{completedCount}/{totalCount} lessons</span>
+                            <span className="text-xs font-medium text-primary">{pct}%</span>
+                          </div>
+                          <div className="h-1.5 bg-primary/10 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary rounded-full transition-all duration-500"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${statusColor[course.status] ?? "bg-gray-100 text-gray-600"}`}>
+                          {course.status}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${levelColor[course.detected_level] ?? "bg-gray-100"}`}>
+                          {course.detected_level}
+                        </span>
+                        <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          {course.duration_weeks}w
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-heading font-bold text-foreground text-sm leading-snug mb-2 line-clamp-2">
-                        {course.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground mb-3">{course.domain}</p>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${statusColor[course.status] ?? "bg-gray-100 text-gray-600"}`}>
-                        {course.status}
-                      </span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${levelColor[course.detected_level] ?? "bg-gray-100"}`}>
-                        {course.detected_level}
-                      </span>
-                      <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        {course.duration_weeks}w
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
+                  </Link>
+                </motion.div>
+              );
+            })}
 
             {/* New course card */}
             <motion.div {...fadeUp(0.35 + courses.length * 0.07)}>
@@ -207,7 +289,7 @@ export default function DashboardClient({
                   : `${2 - profile.courses_generated_this_month} free course${2 - profile.courses_generated_this_month !== 1 ? "s" : ""} remaining this month.`}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Upgrade to Pro for unlimited courses, PDF uploads, and Boss Battle challenges.
+                Upgrade to Pro for unlimited courses, PDF uploads, and more.
               </p>
             </div>
             <Link href="/settings?tab=billing">
@@ -218,6 +300,48 @@ export default function DashboardClient({
           </div>
         </motion.div>
       )}
+    </div>
+  );
+}
+
+function WeeklyXpGoal({ weeklyXp, weeklyGoal }: { weeklyXp: number; weeklyGoal: number }) {
+  const pct = Math.min(100, Math.round((weeklyXp / weeklyGoal) * 100));
+  const radius = 38;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (pct / 100) * circumference;
+  const done = pct >= 100;
+
+  return (
+    <div className="bg-card rounded-2xl border border-primary/8 p-5 shadow-sm flex items-center gap-5">
+      <div className="relative flex-shrink-0">
+        <svg width="96" height="96" viewBox="0 0 96 96" className="-rotate-90">
+          <circle cx="48" cy="48" r={radius} fill="none" stroke="currentColor" strokeWidth="8" className="text-primary/10" />
+          <circle
+            cx="48" cy="48" r={radius}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="8"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            className={done ? "text-emerald-500" : "text-primary"}
+            style={{ transition: "stroke-dashoffset 0.6s ease" }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className={`text-lg font-extrabold font-heading ${done ? "text-emerald-600" : "text-primary"}`}>{pct}%</span>
+        </div>
+      </div>
+      <div>
+        <p className="font-semibold text-foreground text-sm">Weekly XP Goal</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{weeklyXp.toLocaleString()} / {weeklyGoal.toLocaleString()} XP this week</p>
+        {done ? (
+          <p className="text-xs text-emerald-600 font-medium mt-1">Goal reached! 🎉</p>
+        ) : (
+          <p className="text-xs text-muted-foreground/70 mt-1">{(weeklyGoal - weeklyXp).toLocaleString()} XP to go</p>
+        )}
+        <p className="text-xs text-muted-foreground/50 mt-1">Change goal in Settings</p>
+      </div>
     </div>
   );
 }

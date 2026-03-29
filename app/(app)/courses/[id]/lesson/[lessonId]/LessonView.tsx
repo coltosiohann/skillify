@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -11,6 +11,8 @@ import {
   Zap,
   Clock,
   Target,
+  Bookmark,
+  WifiOff,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -23,6 +25,7 @@ import LessonStepper from "@/components/lesson/LessonStepper";
 import LessonProgressPanel, {
   type LessonNavItem,
 } from "@/components/lesson/LessonProgressPanel";
+import LessonNotes from "@/components/lesson/LessonNotes";
 
 interface Resource {
   type: string;
@@ -44,9 +47,13 @@ interface Lesson {
 interface Props {
   lesson: Lesson;
   courseId: string;
+  moduleId: string;
+  currentModuleLessonIds: string[];
   moduleTitle: string;
   courseTitle: string;
   isCompleted: boolean;
+  isBookmarked: boolean;
+  initialNote: string;
   userId: string;
   prevLessonId: string | null;
   nextLessonId: string | null;
@@ -165,9 +172,13 @@ function renderMarkdown(md: string): React.ReactNode[] {
 export default function LessonView({
   lesson,
   courseId,
+  moduleId,
+  currentModuleLessonIds,
   moduleTitle,
   courseTitle,
   isCompleted: initialCompleted,
+  isBookmarked: initialBookmarked,
+  initialNote,
   userId,
   prevLessonId,
   nextLessonId,
@@ -178,8 +189,52 @@ export default function LessonView({
   const [completed, setCompleted] = useState(initialCompleted);
   const [loading, setLoading] = useState(false);
   const [allSectionsViewed, setAllSectionsViewed] = useState(false);
+  const [bookmarked, setBookmarked] = useState(initialBookmarked);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
+  const [savedOffline, setSavedOffline] = useState(false);
+  const lessonStartTime = useRef(Date.now());
   const supabase = createClient();
   const router = useRouter();
+
+  async function toggleBookmark() {
+    if (bookmarkLoading) return;
+    setBookmarkLoading(true);
+    try {
+      if (bookmarked) {
+        await supabase.from("bookmarks").delete().eq("user_id", userId).eq("lesson_id", lesson.id);
+        setBookmarked(false);
+        toast.success("Bookmark removed");
+      } else {
+        await supabase.from("bookmarks").insert({ user_id: userId, lesson_id: lesson.id } as never);
+        setBookmarked(true);
+        toast.success("Lesson bookmarked!");
+      }
+    } catch {
+      toast.error("Failed to update bookmark");
+    } finally {
+      setBookmarkLoading(false);
+    }
+  }
+
+  // #11 — scroll to top when lesson changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [lesson.id]);
+
+  // #13 — keyboard shortcuts: ArrowLeft = prev, ArrowRight = next
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === "ArrowLeft" && prevLessonId) {
+        router.push(`/courses/${courseId}/lesson/${prevLessonId}`);
+      }
+      if (e.key === "ArrowRight" && nextLessonId) {
+        router.push(`/courses/${courseId}/lesson/${nextLessonId}`);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [prevLessonId, nextLessonId, courseId, router]);
 
   const resources = Array.isArray(lesson.resources_json)
     ? (lesson.resources_json as Resource[])
@@ -205,20 +260,106 @@ export default function LessonView({
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("total_xp")
+        .select("total_xp, current_streak, last_active_date, streak_freeze_used_at, streak_freeze_count, total_minutes_learned")
         .eq("id", userId)
         .single();
+
+      // Streak calculation with freeze support
+      const today = new Date().toISOString().split("T")[0];
+      const lastActive = (profile as unknown as { last_active_date: string | null })?.last_active_date;
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+      const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString().split("T")[0];
+      const profileAny = profile as unknown as {
+        last_active_date: string | null;
+        streak_freeze_used_at: string | null;
+        streak_freeze_count: number;
+        total_minutes_learned: number;
+      };
+      let newStreak = profile?.current_streak ?? 0;
+      let freezeUpdate: Record<string, unknown> = {};
+
+      if (lastActive === today) {
+        // Already active today, keep streak as-is
+      } else if (lastActive === yesterday) {
+        newStreak = newStreak + 1;
+      } else if (lastActive === twoDaysAgo) {
+        // Missed exactly one day — check if freeze is available this week
+        const now = new Date();
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay());
+        weekStart.setHours(0, 0, 0, 0);
+        const freezeUsedAt = profileAny.streak_freeze_used_at;
+        const freezeUsedThisWeek = freezeUsedAt && new Date(freezeUsedAt) >= weekStart;
+
+        if (!freezeUsedThisWeek) {
+          // Auto-apply freeze: keep streak going
+          newStreak = newStreak + 1;
+          freezeUpdate = {
+            streak_freeze_used_at: yesterday,
+            streak_freeze_count: (profileAny.streak_freeze_count ?? 0) + 1,
+          };
+          toast("Streak freeze used! 🧊", { description: "You missed a day — your streak was protected. 1 freeze per week." });
+        } else {
+          newStreak = 1;
+        }
+      } else {
+        newStreak = 1;
+      }
+
+      // Calculate minutes spent on this lesson (capped at 120 min)
+      const minutesSpent = Math.min(120, Math.round((Date.now() - lessonStartTime.current) / 60000));
+
       await supabase
         .from("profiles")
-        .update({ total_xp: (profile?.total_xp ?? 0) + lesson.xp_reward })
+        .update({
+          total_xp: (profile?.total_xp ?? 0) + lesson.xp_reward,
+          current_streak: newStreak,
+          last_active_date: today,
+          total_minutes_learned: (profileAny?.total_minutes_learned ?? 0) + minutesSpent,
+          ...freezeUpdate,
+        } as never)
         .eq("id", userId);
 
+      // Course completion check
+      const completedIds = new Set(allLessons.filter((l) => l.completed).map((l) => l.id));
+      completedIds.add(lesson.id);
+      if (completedIds.size === allLessons.length) {
+        await supabase
+          .from("courses")
+          .update({ status: "completed" })
+          .eq("id", courseId);
+      }
+
+      // Module completion check
+      const moduleCompletedIds = new Set(
+        allLessons
+          .filter((l) => currentModuleLessonIds.includes(l.id) && (l.completed || l.id === lesson.id))
+          .map((l) => l.id)
+      );
+      const isLastInModule = currentModuleLessonIds.every((id) => moduleCompletedIds.has(id));
+
       setCompleted(true);
-      toast.success(`+${lesson.xp_reward} XP earned!`);
+
+      // Milestone celebrations
+      if (newStreak === 7) {
+        toast.success(`🔥 7-day streak! You're on fire!`, { duration: 4000 });
+      } else if (newStreak === 30) {
+        toast.success(`🏆 30-day streak! Incredible dedication!`, { duration: 5000 });
+      } else if (newStreak === 3) {
+        toast.success(`⚡ 3-day streak! Keep it going!`, { duration: 3000 });
+      } else if (lastActive !== today && newStreak > 1) {
+        toast.success(`+${lesson.xp_reward} XP! 🔥 ${newStreak}-day streak!`);
+      } else {
+        toast.success(`+${lesson.xp_reward} XP earned!`);
+      }
       router.refresh();
 
-      // Auto-navigate to next lesson after delay
-      if (nextLessonId) {
+      if (isLastInModule) {
+        setTimeout(() => {
+          toast("Module complete! Take the quiz to earn bonus XP 🧠", { icon: "🎯" });
+          router.push(`/courses/${courseId}/quiz?moduleId=${moduleId}`);
+        }, 1500);
+      } else if (nextLessonId) {
         setTimeout(() => {
           toast("Continuing to next lesson...", { icon: "➡️" });
           router.push(`/courses/${courseId}/lesson/${nextLessonId}`);
@@ -287,6 +428,41 @@ export default function LessonView({
               <CheckCircle className="w-3 h-3 mr-1" /> Completed
             </Badge>
           )}
+          <button
+            onClick={toggleBookmark}
+            disabled={bookmarkLoading}
+            aria-label={bookmarked ? "Remove bookmark" : "Bookmark this lesson"}
+            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+              bookmarked
+                ? "bg-primary/10 text-primary hover:bg-primary/15"
+                : "hover:bg-primary/8 text-muted-foreground hover:text-primary"
+            } disabled:opacity-50`}
+          >
+            <Bookmark className={`w-4 h-4 ${bookmarked ? "fill-current" : ""}`} />
+          </button>
+          <button
+            onClick={() => {
+              if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({
+                  type: "CACHE_LESSON",
+                  url: window.location.href,
+                });
+                setSavedOffline(true);
+                toast.success("Lesson saved for offline reading!");
+              } else {
+                toast("Offline saving not available", { description: "Service worker not active yet. Reload and try again." });
+              }
+            }}
+            aria-label="Save for offline reading"
+            title="Save for offline"
+            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+              savedOffline
+                ? "bg-sky-100 text-sky-600 dark:bg-sky-900/30"
+                : "hover:bg-primary/8 text-muted-foreground hover:text-sky-600"
+            }`}
+          >
+            <WifiOff className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -359,6 +535,9 @@ export default function LessonView({
           </div>
         </motion.div>
       )}
+
+      {/* Notes */}
+      <LessonNotes lessonId={lesson.id} userId={userId} initialNote={initialNote} />
 
       {/* Mark Complete */}
       <div className="mb-8">

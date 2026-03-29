@@ -13,6 +13,8 @@ import {
   ArrowLeft,
   ArrowRight,
   Target,
+  Brain,
+  Pencil,
 } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +54,7 @@ interface Props {
   course: Course;
   modules: Module[];
   completedLessonIds: Set<string>;
+  quizAttempts: Record<string, { quizId: string; passed: boolean; score: number }>;
 }
 
 const levelColors: Record<string, string> = {
@@ -70,6 +73,7 @@ export default function CourseView({
   course,
   modules,
   completedLessonIds,
+  quizAttempts = {},
 }: Props) {
   const [expandedModules, setExpandedModules] = useState<Set<string>>(
     new Set(modules.map((m) => m.id))
@@ -115,14 +119,22 @@ export default function CourseView({
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      {/* Back */}
-      <Link
-        href="/dashboard"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 cursor-pointer"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Dashboard
-      </Link>
+      {/* Back + Edit row */}
+      <div className="flex items-center justify-between mb-6">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Dashboard
+        </Link>
+        <Link href={`/courses/${course.id}/edit`}>
+          <Button variant="outline" size="sm" className="rounded-xl border-primary/15 gap-1.5 cursor-pointer text-xs">
+            <Pencil className="w-3.5 h-3.5" />
+            Edit Course
+          </Button>
+        </Link>
+      </div>
 
       {/* Header */}
       <motion.div
@@ -192,9 +204,16 @@ export default function CourseView({
           </Link>
         )}
         {!firstIncomplete && allLessons.length > 0 && (
-          <div className="flex items-center gap-2 text-emerald-300 font-semibold">
-            <CheckCircle className="w-5 h-5" />
-            Course completed!
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 text-emerald-300 font-semibold">
+              <CheckCircle className="w-5 h-5" />
+              Course completed!
+            </div>
+            <Link href={`/courses/${course.id}/certificate`}>
+              <Button className="bg-amber-400 hover:bg-amber-300 text-amber-900 font-semibold rounded-xl gap-2 shadow-md cursor-pointer text-sm">
+                🏆 View Certificate
+              </Button>
+            </Link>
           </div>
         )}
       </motion.div>
@@ -271,6 +290,49 @@ export default function CourseView({
                     <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                   )}
                 </button>
+
+                {/* Quiz status — visible when module is fully complete */}
+                {modCompleted === lessons.length && lessons.length > 0 && isExpanded && (() => {
+                  const attempt = quizAttempts[mod.id];
+                  if (attempt?.passed) {
+                    return (
+                      <div className="px-5 py-3 border-t border-emerald-100 bg-emerald-50/60 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
+                          <CheckCircle className="w-4 h-4" />
+                          Quiz Passed · {attempt.score}/5 correct
+                        </div>
+                        <Link href={`/courses/${course.id}/quiz?moduleId=${mod.id}`} className="text-xs text-emerald-600 hover:underline cursor-pointer">
+                          Retake
+                        </Link>
+                      </div>
+                    );
+                  }
+                  if (attempt && !attempt.passed) {
+                    return (
+                      <div className="px-5 py-3 border-t border-amber-100 bg-amber-50/60 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-amber-700">
+                          <Brain className="w-4 h-4" />
+                          Quiz not passed yet
+                        </div>
+                        <Link href={`/courses/${course.id}/quiz?moduleId=${mod.id}`}>
+                          <button type="button" className="text-xs font-semibold text-primary hover:text-[#6d28d9] transition-colors cursor-pointer">
+                            Retake Quiz
+                          </button>
+                        </Link>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="px-5 py-3 border-t border-primary/8 bg-primary/3">
+                      <Link href={`/courses/${course.id}/quiz?moduleId=${mod.id}`}>
+                        <button type="button" className="flex items-center gap-2 text-sm font-semibold text-primary hover:text-[#6d28d9] transition-colors cursor-pointer">
+                          <Brain className="w-4 h-4" />
+                          Take Module Quiz · +150 XP
+                        </button>
+                      </Link>
+                    </div>
+                  );
+                })()}
 
                 {/* Lessons */}
                 {isExpanded && (

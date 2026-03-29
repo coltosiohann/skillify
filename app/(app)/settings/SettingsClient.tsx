@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -14,6 +14,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
+interface NotifPrefs {
+  dailyReminder: boolean;
+  weeklyReport: boolean;
+  newBadge: boolean;
+  streakAlert: boolean;
+  courseComplete: boolean;
+  reminderTime: string;
+}
+
 interface Profile {
   full_name: string | null;
   avatar_url: string | null;
@@ -22,6 +31,8 @@ interface Profile {
   current_streak: number;
   courses_generated_this_month: number;
   created_at: string;
+  notification_preferences: NotifPrefs | null;
+  weekly_xp_goal?: number;
 }
 
 interface Props {
@@ -64,21 +75,53 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 export default function SettingsClient({ profile, email, userId }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("profile");
   const [fullName, setFullName] = useState(profile?.full_name ?? "");
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
-  // Notification toggles
-  const [notifs, setNotifs] = useState({
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("Please select an image file"); return; }
+    if (file.size > 2 * 1024 * 1024) { toast.error("Image must be under 2 MB"); return; }
+    setUploadingAvatar(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `${userId}/avatar.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
+      if (uploadErr) throw uploadErr;
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+      const url = `${publicUrl}?t=${Date.now()}`;
+      await supabase.from("profiles").update({ avatar_url: url } as never).eq("id", userId);
+      setAvatarUrl(url);
+      toast.success("Avatar updated!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  // Notification toggles — seeded from DB
+  const defaultNotifs = {
     dailyReminder: true,
     weeklyReport: true,
     newBadge: true,
     streakAlert: true,
     courseComplete: true,
+  };
+  const [notifs, setNotifs] = useState({
+    ...(profile?.notification_preferences ?? defaultNotifs),
   });
-
-  // Appearance
-  const [reminderTime, setReminderTime] = useState("09:00");
+  const [reminderTime, setReminderTime] = useState(
+    profile?.notification_preferences?.reminderTime ?? "09:00"
+  );
+  const [savingNotifs, setSavingNotifs] = useState(false);
+  const [weeklyXpGoal, setWeeklyXpGoal] = useState(profile?.weekly_xp_goal ?? 200);
 
   async function saveProfile() {
     setSaving(true);
@@ -168,11 +211,17 @@ export default function SettingsClient({ profile, email, userId }: Props) {
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <Avatar className="w-16 h-16 ring-2 ring-primary/20">
-                      <AvatarImage src={profile?.avatar_url ?? undefined} />
+                      <AvatarImage src={avatarUrl ?? undefined} />
                       <AvatarFallback className="bg-primary text-white text-lg font-bold">{initials}</AvatarFallback>
                     </Avatar>
-                    <button className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center shadow cursor-pointer hover:bg-[#6d28d9] transition-colors" aria-label="Change avatar">
-                      <Camera className="w-3 h-3" />
+                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingAvatar}
+                      className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center shadow cursor-pointer hover:bg-[#6d28d9] transition-colors disabled:opacity-60"
+                      aria-label="Change avatar"
+                    >
+                      {uploadingAvatar ? <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Camera className="w-3 h-3" />}
                     </button>
                   </div>
                   <div>
@@ -282,11 +331,48 @@ export default function SettingsClient({ profile, email, userId }: Props) {
                   <p className="text-xs text-muted-foreground">When to send your daily reminder</p>
                 </div>
 
+                <div className="space-y-1.5">
+                  <Label htmlFor="weeklyGoal" className="text-sm font-medium text-foreground">Weekly XP Goal</Label>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      id="weeklyGoal"
+                      type="number"
+                      min={50}
+                      max={5000}
+                      step={50}
+                      value={weeklyXpGoal}
+                      onChange={(e) => setWeeklyXpGoal(Math.max(50, parseInt(e.target.value) || 200))}
+                      className="rounded-xl border-primary/15 focus-visible:ring-primary/20 w-32"
+                    />
+                    <span className="text-sm text-muted-foreground">XP per week</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Shown as a ring on your dashboard. Suggested: 200 (casual), 500 (regular), 1000 (intense).</p>
+                </div>
+
                 <Button
-                  onClick={() => toast.success("Notification preferences saved!")}
-                  className="w-full h-11 rounded-xl font-semibold gap-2 bg-primary hover:bg-[#6d28d9] text-white shadow-md cursor-pointer"
+                  onClick={async () => {
+                    setSavingNotifs(true);
+                    try {
+                      const { error } = await supabase
+                        .from("profiles")
+                        .update({ notification_preferences: { ...notifs, reminderTime }, weekly_xp_goal: weeklyXpGoal } as never)
+                        .eq("id", userId);
+                      if (error) throw error;
+                      toast.success("Preferences saved!");
+                    } catch {
+                      toast.error("Failed to save preferences");
+                    } finally {
+                      setSavingNotifs(false);
+                    }
+                  }}
+                  disabled={savingNotifs}
+                  className="w-full h-11 rounded-xl font-semibold gap-2 bg-primary hover:bg-[#6d28d9] text-white shadow-md cursor-pointer disabled:opacity-60"
                 >
-                  <Save className="w-4 h-4" /> Save Preferences
+                  {savingNotifs ? (
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <><Save className="w-4 h-4" /> Save Preferences</>
+                  )}
                 </Button>
               </motion.div>
             )}

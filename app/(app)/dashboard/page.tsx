@@ -8,24 +8,79 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [profileRes, coursesRes] = await Promise.all([
+  // Start of current week (Monday)
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=Sun
+  const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - daysFromMonday);
+  weekStart.setHours(0, 0, 0, 0);
+
+  const [profileRes, profileExtRes, coursesRes, progressRes, weeklyProgressRes, weeklyQuizRes] = await Promise.all([
     supabase
       .from("profiles")
       .select("full_name, plan, total_xp, current_streak, courses_generated_this_month")
       .eq("id", user.id)
       .single(),
+    // New columns added in migrations 006/009 — may not exist yet; fetched separately so base query never fails
+    supabase
+      .from("profiles")
+      .select("weekly_xp_goal, total_minutes_learned")
+      .eq("id", user.id)
+      .single(),
     supabase
       .from("courses")
-      .select("id, title, domain, detected_level, status, duration_weeks, created_at")
+      .select(`
+        id, title, domain, detected_level, status, duration_weeks, created_at,
+        modules (
+          id,
+          order_index,
+          lessons ( id, order_index )
+        )
+      `)
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(6),
+    supabase
+      .from("progress")
+      .select("lesson_id")
+      .eq("user_id", user.id),
+    supabase
+      .from("progress")
+      .select("lesson_id, lessons!inner(xp_reward)")
+      .eq("user_id", user.id)
+      .gte("completed_at", weekStart.toISOString()),
+    supabase
+      .from("quiz_attempts")
+      .select("xp_awarded")
+      .eq("user_id", user.id)
+      .gte("attempted_at", weekStart.toISOString()),
   ]);
+
+  const completedIds = new Set((progressRes.data ?? []).map((p) => p.lesson_id));
+
+  // Calculate this week's XP from lessons + quizzes
+  const weeklyLessonXp = (weeklyProgressRes.data ?? []).reduce((sum, p) => {
+    const lesson = p.lessons as unknown as { xp_reward: number } | null;
+    return sum + (lesson?.xp_reward ?? 0);
+  }, 0);
+  const weeklyQuizXp = (weeklyQuizRes.data ?? []).reduce((sum, q) => sum + (q.xp_awarded ?? 0), 0);
+  const weeklyXp = weeklyLessonXp + weeklyQuizXp;
+  const weeklyGoal = (profileExtRes.data as { weekly_xp_goal?: number } | null)?.weekly_xp_goal ?? 200;
+  const totalMinutesLearned = (profileExtRes.data as { total_minutes_learned?: number } | null)?.total_minutes_learned ?? 0;
+
+  // Use email local-part as name fallback when full_name is null
+  const emailFallback = user.email?.split("@")[0] ?? "Learner";
 
   return (
     <DashboardClient
       profile={profileRes.data}
-      courses={coursesRes.data ?? []}
+      emailFallback={emailFallback}
+      courses={(coursesRes.data ?? []) as never}
+      completedLessonIds={Array.from(completedIds)}
+      weeklyXp={weeklyXp}
+      weeklyGoal={weeklyGoal}
+      totalMinutesLearned={totalMinutesLearned}
     />
   );
 }

@@ -21,6 +21,8 @@ interface Course {
 interface Props {
   progress: ProgressWithLesson[];
   courses: Course[];
+  totalXp: number;
+  currentStreak: number;
 }
 
 interface ActivityItem {
@@ -70,7 +72,10 @@ function groupByDate(items: ActivityItem[]): { label: string; items: ActivityIte
   return Object.entries(groups).map(([label, items]) => ({ label, items }));
 }
 
-export default function NotificationsClient({ progress, courses }: Props) {
+const XP_MILESTONES = [100, 500, 1000, 2500, 5000, 10000];
+const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100];
+
+export default function NotificationsClient({ progress, courses, totalXp, currentStreak }: Props) {
   // Build activity feed from progress + courses
   const items: ActivityItem[] = [];
 
@@ -115,6 +120,44 @@ export default function NotificationsClient({ progress, courses }: Props) {
         iconBg: "bg-amber-50",
         link: `/courses/${c.id}`,
       });
+    }
+  }
+
+  // XP milestones
+  const mostRecentLesson = progress[0]?.completed_at ? new Date(progress[0].completed_at) : new Date();
+  for (const milestone of XP_MILESTONES) {
+    if (totalXp >= milestone) {
+      items.push({
+        id: `xp-milestone-${milestone}`,
+        type: "xp_milestone",
+        title: `${milestone.toLocaleString()} XP reached!`,
+        description: `You've earned ${milestone.toLocaleString()} total XP. Keep it up!`,
+        date: mostRecentLesson,
+        icon: Zap,
+        iconColor: "text-amber-600",
+        iconBg: "bg-amber-50",
+      });
+    }
+  }
+
+  // Streak milestones
+  if (currentStreak > 0) {
+    const today = new Date();
+    for (const milestone of STREAK_MILESTONES) {
+      if (currentStreak >= milestone) {
+        const milestoneDate = new Date(today);
+        milestoneDate.setDate(today.getDate() - (currentStreak - milestone));
+        items.push({
+          id: `streak-milestone-${milestone}`,
+          type: "xp_milestone",
+          title: `${milestone}-day streak! 🔥`,
+          description: `You've maintained a ${milestone}-day learning streak. Impressive!`,
+          date: milestoneDate,
+          icon: Flame,
+          iconColor: "text-orange-600",
+          iconBg: "bg-orange-50",
+        });
+      }
     }
   }
 
