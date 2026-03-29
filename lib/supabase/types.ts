@@ -143,6 +143,7 @@ export type Database = {
         Update: {
           title?: string;
           description?: string;
+          order_index?: number;
         };
         Relationships: [];
       };
@@ -174,6 +175,8 @@ export type Database = {
           created_at?: string;
         };
         Update: {
+          title?: string;
+          order_index?: number;
           content_markdown?: string;
           content_json?: Json | null;
           resources_json?: Json;
