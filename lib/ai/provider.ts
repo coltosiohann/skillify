@@ -11,15 +11,22 @@ function hasOpenAIKey() {
   return k && k !== "your_openai_api_key";
 }
 
+export interface GenerateOptions {
+  maxTokens?: number;
+}
+
 export async function generateText(
   userPrompt: string,
-  systemPrompt = "You are a helpful AI assistant."
+  systemPrompt = "You are a helpful AI assistant.",
+  options?: GenerateOptions
 ): Promise<string> {
+  const maxTokens = options?.maxTokens ?? 16384;
+
   if (hasAnthropicKey()) {
     const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const msg = await claude.messages.create({
       model: "claude-opus-4-6",
-      max_tokens: 16384,
+      max_tokens: maxTokens,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
     });
@@ -34,7 +41,7 @@ export async function generateText(
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      max_tokens: 16384,
+      max_tokens: maxTokens,
     });
     return res.choices[0].message.content ?? "";
   }

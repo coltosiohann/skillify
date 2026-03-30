@@ -8,7 +8,13 @@ import ServiceWorkerRegistrar from "@/components/app/ServiceWorkerRegistrar";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    // Stale/invalid refresh token — redirect to login
+  }
 
   if (!user) redirect("/login");
 

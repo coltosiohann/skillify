@@ -12,8 +12,12 @@ import Footer from "@/components/landing/Footer";
 
 export default async function LandingPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (user) redirect("/dashboard");
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) redirect("/dashboard");
+  } catch {
+    // Stale/invalid refresh token in cookies — treat as logged out
+  }
 
   return (
     <>
