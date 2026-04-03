@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, XCircle, ArrowRight, Zap, Trophy, RotateCcw } from "lucide-react";
+import { CheckCircle, XCircle, ArrowRight, Zap, Trophy, RotateCcw, SkipForward, Clock, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -25,22 +24,60 @@ interface Props {
   userId: string;
   xpReward: number;
   isRetake?: boolean;
+  /** Optional per-question timer in seconds. If not provided, no timer is shown. */
+  timerSeconds?: number;
 }
 
-type Phase = "quiz" | "results";
+type Phase = "quiz" | "review" | "results";
 
-export default function QuizPlayer({ quizId, questions, moduleTitle, courseId, userId, xpReward, isRetake = false }: Props) {
+export default function QuizPlayer({
+  quizId,
+  questions,
+  moduleTitle,
+  courseId,
+  xpReward,
+  isRetake = false,
+  timerSeconds = 30,
+}: Props) {
   const [phase, setPhase] = useState<Phase>("quiz");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [skipped, setSkipped] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
-  const supabase = createClient();
+  const [timeLeft, setTimeLeft] = useState(timerSeconds);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Server result for display
+  const [serverResult, setServerResult] = useState<{
+    score: number; total: number; passed: boolean; xpAwarded: number; isRetake: boolean
+  } | null>(null);
 
   const current = questions[currentIndex];
   const isCorrect = selected === current?.correct_answer;
   const isLast = currentIndex === questions.length - 1;
+
+  // ── Timer ─────────────────────────────────────────────────────────────────
+  function resetTimer() {
+    setTimeLeft(timerSeconds);
+  }
+
+  useEffect(() => {
+    if (phase !== "quiz" || revealed) return;
+    timerRef.current = setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          // Time's up — auto-skip this question
+          handleSkip();
+          return timerSeconds;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, currentIndex, revealed]);
 
   function handleSelect(option: string) {
     if (revealed) return;
@@ -49,18 +86,47 @@ export default function QuizPlayer({ quizId, questions, moduleTitle, courseId, u
 
   function handleReveal() {
     if (!selected) return;
+    if (timerRef.current) clearInterval(timerRef.current);
     setRevealed(true);
     setAnswers((prev) => ({ ...prev, [current.id]: selected }));
   }
 
-  // Keyboard shortcuts: Enter = check/next, 1-4 = select option
+  function handleSkip() {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setSkipped((prev) => new Set([...prev, current.id]));
+    // Record blank answer for skipped
+    setAnswers((prev) => ({ ...prev, [current.id]: "" }));
+    if (isLast) {
+      submitQuiz({ ...answers, [current.id]: "" });
+    } else {
+      setCurrentIndex((i) => i + 1);
+      setSelected(null);
+      setRevealed(false);
+      resetTimer();
+    }
+  }
+
+  async function handleNext() {
+    if (isLast) {
+      await submitQuiz({ ...answers, [current.id]: selected ?? "" });
+    } else {
+      setCurrentIndex((i) => i + 1);
+      setSelected(null);
+      setRevealed(false);
+      resetTimer();
+    }
+  }
+
+  // Keyboard shortcuts: Enter = check/next, 1-4 = select option, S = skip
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (phase !== "quiz") return;
     if (e.key === "Enter") {
       if (!revealed && selected) handleReveal();
       else if (revealed && !submitting) handleNext();
     }
-    // 1-4 keys to pick options
+    if ((e.key === "s" || e.key === "S") && !revealed) {
+      handleSkip();
+    }
     const idx = parseInt(e.key) - 1;
     if (!revealed && idx >= 0 && idx < (current?.options_json?.length ?? 0)) {
       handleSelect(current.options_json[idx]);
@@ -73,68 +139,120 @@ export default function QuizPlayer({ quizId, questions, moduleTitle, courseId, u
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  async function handleNext() {
-    if (isLast) {
-      await submitQuiz({ ...answers, [current.id]: selected ?? "" });
-    } else {
-      setCurrentIndex((i) => i + 1);
-      setSelected(null);
-      setRevealed(false);
-    }
-  }
-
   async function submitQuiz(finalAnswers: Record<string, string>) {
     setSubmitting(true);
-    const score = questions.filter((q) => finalAnswers[q.id] === q.correct_answer).length;
-    const passed = score >= Math.ceil(questions.length * 0.6);
-    // No XP on retakes
-    const xpAwarded = isRetake ? 0 : passed ? xpReward : Math.floor(xpReward * 0.25);
-
     try {
-      await supabase.from("quiz_attempts").insert({
-        user_id: userId,
-        quiz_id: quizId,
-        score,
-        answers_json: finalAnswers,
-        passed,
-        xp_awarded: xpAwarded,
-      } as never);
+      const res = await fetch("/api/quiz/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quizId, answers: finalAnswers }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to save quiz result");
 
-      if (!isRetake && xpAwarded > 0) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("total_xp")
-          .eq("id", userId)
-          .single();
-        await supabase
-          .from("profiles")
-          .update({ total_xp: (profile?.total_xp ?? 0) + xpAwarded } as never)
-          .eq("id", userId);
-        toast.success(`+${xpAwarded} XP earned!`);
-      } else if (isRetake) {
-        toast.success(passed ? "Quiz passed! 🎉" : "Keep practicing!");
+      const result = data as { score: number; total: number; passed: boolean; xpAwarded: number; isRetake: boolean };
+      setServerResult(result);
+
+      if (!result.isRetake && result.xpAwarded > 0) {
+        toast.success(`+${result.xpAwarded} XP earned!`);
+      } else if (result.isRetake) {
+        toast.success(result.passed ? "Quiz passed! 🎉" : "Keep practicing!");
       }
-    } catch {
-      toast.error("Failed to save quiz result");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save quiz result");
     } finally {
       setSubmitting(false);
       setPhase("results");
     }
   }
 
-  const score = questions.filter((q) => answers[q.id] === q.correct_answer).length;
-  const passed = score >= Math.ceil(questions.length * 0.6);
-  const scorePct = Math.round((score / questions.length) * 100);
+  // ── Review phase (after results, user clicks "Review Answers") ────────────
+  if (phase === "review") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-xl mx-auto px-4 py-8"
+      >
+        <div className="flex items-center gap-3 mb-6">
+          <BookOpen className="w-5 h-5 text-primary" />
+          <h2 className="font-heading text-xl font-bold text-foreground">Answer Review</h2>
+          <button
+            onClick={() => setPhase("results")}
+            className="ml-auto text-xs text-primary hover:underline cursor-pointer"
+          >
+            ← Back to results
+          </button>
+        </div>
 
+        <div className="space-y-4">
+          {questions.map((q, i) => {
+            const userAnswer = answers[q.id];
+            const wasSkipped = skipped.has(q.id);
+            const correct = userAnswer === q.correct_answer;
+
+            return (
+              <div
+                key={q.id}
+                className={`rounded-2xl border p-4 ${
+                  wasSkipped
+                    ? "border-primary/15 bg-primary/3"
+                    : correct
+                    ? "border-emerald-200 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-900/20"
+                    : "border-red-200 bg-red-50 dark:border-red-700 dark:bg-red-900/20"
+                }`}
+              >
+                <div className="flex items-start gap-2 mb-2">
+                  {wasSkipped ? (
+                    <SkipForward className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  ) : correct ? (
+                    <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <XCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                  )}
+                  <p className="font-medium text-sm text-foreground">Q{i + 1}: {q.question}</p>
+                </div>
+                {!wasSkipped && !correct && (
+                  <p className="text-xs text-muted-foreground mb-1 ml-6">Your answer: <span className="text-red-600 font-medium">{userAnswer || "—"}</span></p>
+                )}
+                <p className="text-xs ml-6 mb-1">
+                  <span className="text-muted-foreground">Correct: </span>
+                  <span className="text-emerald-700 font-medium">{q.correct_answer}</span>
+                </p>
+                {q.explanation && (
+                  <p className="text-xs text-foreground/70 ml-6 mt-1 italic">{q.explanation}</p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <Link href={`/courses/${courseId}`} className="block mt-6">
+          <Button className="w-full h-11 rounded-xl bg-primary hover:bg-[#6d28d9] text-white font-semibold shadow-md shadow-primary/25 cursor-pointer">
+            Back to Course
+          </Button>
+        </Link>
+      </motion.div>
+    );
+  }
+
+  // ── Results phase ─────────────────────────────────────────────────────────
   if (phase === "results") {
+    const displayScore = serverResult?.score ?? questions.filter((q) => answers[q.id] === q.correct_answer).length;
+    const displayTotal = serverResult?.total ?? questions.length;
+    const displayPassed = serverResult?.passed ?? displayScore >= Math.ceil(displayTotal * 0.6);
+    const displayPct = Math.round((displayScore / displayTotal) * 100);
+    const displayXp = serverResult?.xpAwarded ?? (displayPassed ? xpReward : Math.floor(xpReward * 0.25));
+    const skippedCount = skipped.size;
+
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="max-w-xl mx-auto px-4 py-12 text-center"
       >
-        <div className={`w-20 h-20 rounded-3xl mx-auto mb-6 flex items-center justify-center ${passed ? "bg-emerald-100 dark:bg-emerald-900/40" : "bg-amber-100 dark:bg-amber-900/40"}`}>
-          {passed ? (
+        <div className={`w-20 h-20 rounded-3xl mx-auto mb-6 flex items-center justify-center ${displayPassed ? "bg-emerald-100 dark:bg-emerald-900/40" : "bg-amber-100 dark:bg-amber-900/40"}`}>
+          {displayPassed ? (
             <Trophy className="w-10 h-10 text-emerald-600" />
           ) : (
             <RotateCcw className="w-10 h-10 text-amber-600" />
@@ -142,54 +260,45 @@ export default function QuizPlayer({ quizId, questions, moduleTitle, courseId, u
         </div>
 
         <h2 className="font-heading text-2xl font-extrabold text-foreground mb-2">
-          {passed ? "Quiz Passed!" : "Keep Practicing"}
+          {displayPassed ? "Quiz Passed!" : "Keep Practicing"}
         </h2>
         <p className="text-muted-foreground mb-6">
-          {passed ? "Great job! You've mastered this module." : "You need 60% to pass. Review the lessons and try again."}
+          {displayPassed ? "Great job! You've mastered this module." : "You need 60% to pass. Review the lessons and try again."}
         </p>
 
-        <div className="glass-card rounded-3xl p-6 border border-primary/10 mb-6">
-          <div className="text-5xl font-extrabold font-heading mb-1" style={{ color: passed ? "#10b981" : "#f59e0b" }}>
-            {scorePct}%
+        <div className="glass-card rounded-3xl p-6 border border-primary/10 mb-4">
+          <div className="text-5xl font-extrabold font-heading mb-1" style={{ color: displayPassed ? "#10b981" : "#f59e0b" }}>
+            {displayPct}%
           </div>
-          <p className="text-muted-foreground text-sm mb-4">
-            {score}/{questions.length} correct
+          <p className="text-muted-foreground text-sm mb-1">
+            {displayScore}/{displayTotal} correct
           </p>
+          {skippedCount > 0 && (
+            <p className="text-xs text-muted-foreground mb-3">{skippedCount} skipped</p>
+          )}
 
           <div className="h-2.5 bg-primary/10 rounded-full overflow-hidden mb-4">
             <div
-              className={`h-full rounded-full transition-all duration-700 ${passed ? "bg-emerald-500" : "bg-amber-500"}`}
-              style={{ width: `${scorePct}%` }}
+              className={`h-full rounded-full transition-all duration-700 ${displayPassed ? "bg-emerald-500" : "bg-amber-500"}`}
+              style={{ width: `${displayPct}%` }}
             />
           </div>
 
-          <div className="flex items-center justify-center gap-2 text-amber-600 font-semibold">
-            <Zap className="w-4 h-4" />
-            +{passed ? xpReward : Math.floor(xpReward * 0.25)} XP earned
-          </div>
+          {!isRetake && (
+            <div className="flex items-center justify-center gap-2 text-amber-600 font-semibold">
+              <Zap className="w-4 h-4" />
+              +{displayXp} XP earned
+            </div>
+          )}
         </div>
 
-        {/* Per-question breakdown */}
-        <div className="space-y-2 text-left mb-6">
-          {questions.map((q, i) => {
-            const correct = answers[q.id] === q.correct_answer;
-            return (
-              <div key={q.id} className={`flex items-start gap-2 p-3 rounded-xl border text-sm ${correct ? "border-emerald-200 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-900/30" : "border-red-200 bg-red-50 dark:border-red-700 dark:bg-red-900/30"}`}>
-                {correct ? (
-                  <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                ) : (
-                  <XCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                )}
-                <div>
-                  <p className={`font-medium ${correct ? "text-emerald-800 dark:text-emerald-300" : "text-red-800 dark:text-red-300"}`}>Q{i + 1}: {q.question}</p>
-                  {!correct && (
-                    <p className="text-xs text-muted-foreground mt-0.5">Correct: {q.correct_answer}</p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {/* Review answers button */}
+        <button
+          onClick={() => setPhase("review")}
+          className="w-full mb-3 h-10 rounded-xl border border-primary/20 text-primary text-sm font-medium hover:bg-primary/5 transition-colors cursor-pointer"
+        >
+          Review Answers
+        </button>
 
         <Link href={`/courses/${courseId}`}>
           <Button className="w-full h-11 rounded-xl bg-primary hover:bg-[#6d28d9] text-white font-semibold shadow-md shadow-primary/25 cursor-pointer">
@@ -200,6 +309,10 @@ export default function QuizPlayer({ quizId, questions, moduleTitle, courseId, u
     );
   }
 
+  // ── Quiz phase ─────────────────────────────────────────────────────────────
+  const timerPct = (timeLeft / timerSeconds) * 100;
+  const timerColor = timerPct > 50 ? "bg-emerald-500" : timerPct > 25 ? "bg-amber-500" : "bg-red-500";
+
   return (
     <div className="max-w-xl mx-auto px-4 py-8">
       {/* Header */}
@@ -209,12 +322,30 @@ export default function QuizPlayer({ quizId, questions, moduleTitle, courseId, u
           <h1 className="font-heading text-xl font-bold text-foreground">
             Question {currentIndex + 1} of {questions.length}
           </h1>
-          <span className="text-xs text-amber-600 font-medium flex items-center gap-1">
-            <Zap className="w-3.5 h-3.5" /> {xpReward} XP
-          </span>
+          <div className="flex items-center gap-3">
+            {/* Timer */}
+            {!revealed && (
+              <span className={`flex items-center gap-1 text-xs font-medium tabular-nums ${timeLeft <= 5 ? "text-red-500" : "text-muted-foreground"}`}>
+                <Clock className="w-3.5 h-3.5" />
+                {timeLeft}s
+              </span>
+            )}
+            <span className="text-xs text-amber-600 font-medium flex items-center gap-1">
+              <Zap className="w-3.5 h-3.5" /> {xpReward} XP
+            </span>
+          </div>
         </div>
+        {/* Timer bar */}
+        {!revealed && (
+          <div className="h-1 bg-primary/10 rounded-full mt-2 overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-1000 ${timerColor}`}
+              style={{ width: `${timerPct}%` }}
+            />
+          </div>
+        )}
         {/* Progress bar */}
-        <div className="h-1.5 bg-primary/10 rounded-full mt-3 overflow-hidden">
+        <div className="h-1.5 bg-primary/10 rounded-full mt-1.5 overflow-hidden">
           <div
             className="h-full bg-primary rounded-full transition-all duration-300"
             style={{ width: `${((currentIndex + (revealed ? 1 : 0)) / questions.length) * 100}%` }}
@@ -301,30 +432,48 @@ export default function QuizPlayer({ quizId, questions, moduleTitle, courseId, u
             </motion.div>
           )}
 
-          {/* Action button */}
-          {!revealed ? (
-            <Button
-              onClick={handleReveal}
-              disabled={!selected}
-              className="w-full h-11 rounded-xl bg-primary hover:bg-[#6d28d9] text-white font-semibold shadow-md shadow-primary/25 disabled:opacity-50 cursor-pointer"
-            >
-              Check Answer
-            </Button>
-          ) : (
-            <Button
-              onClick={handleNext}
-              disabled={submitting}
-              className="w-full h-11 rounded-xl bg-primary hover:bg-[#6d28d9] text-white font-semibold shadow-md shadow-primary/25 gap-2 cursor-pointer"
-            >
-              {submitting ? (
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : isLast ? (
-                "Finish Quiz"
-              ) : (
-                <>Next <ArrowRight className="w-4 h-4" /></>
-              )}
-            </Button>
-          )}
+          {/* Action buttons */}
+          <div className="flex gap-2">
+            {!revealed && (
+              <button
+                type="button"
+                onClick={handleSkip}
+                className="flex items-center gap-1.5 px-4 h-11 rounded-xl border border-primary/15 text-muted-foreground text-sm font-medium hover:bg-primary/5 hover:text-foreground transition-colors cursor-pointer flex-shrink-0"
+                title="Skip (S)"
+              >
+                <SkipForward className="w-4 h-4" />
+                Skip
+              </button>
+            )}
+            {!revealed ? (
+              <Button
+                onClick={handleReveal}
+                disabled={!selected}
+                className="flex-1 h-11 rounded-xl bg-primary hover:bg-[#6d28d9] text-white font-semibold shadow-md shadow-primary/25 disabled:opacity-50 cursor-pointer"
+              >
+                Check Answer
+              </Button>
+            ) : (
+              <Button
+                onClick={handleNext}
+                disabled={submitting}
+                className="flex-1 h-11 rounded-xl bg-primary hover:bg-[#6d28d9] text-white font-semibold shadow-md shadow-primary/25 gap-2 cursor-pointer"
+              >
+                {submitting ? (
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : isLast ? (
+                  "Finish Quiz"
+                ) : (
+                  <>Next <ArrowRight className="w-4 h-4" /></>
+                )}
+              </Button>
+            )}
+          </div>
+
+          {/* Keyboard hint */}
+          <p className="text-xs text-muted-foreground text-center mt-3">
+            Press <kbd className="bg-muted px-1.5 py-0.5 rounded text-[10px]">1–{Math.min(4, current?.options_json?.length ?? 4)}</kbd> to select · <kbd className="bg-muted px-1.5 py-0.5 rounded text-[10px]">Enter</kbd> to confirm · <kbd className="bg-muted px-1.5 py-0.5 rounded text-[10px]">S</kbd> to skip
+          </p>
         </motion.div>
       </AnimatePresence>
     </div>

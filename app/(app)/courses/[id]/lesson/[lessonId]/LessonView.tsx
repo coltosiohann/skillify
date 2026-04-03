@@ -22,6 +22,8 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import type { LessonContent } from "@/lib/types/lesson-content";
 import LessonStepper from "@/components/lesson/LessonStepper";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import LessonProgressPanel, {
   type LessonNavItem,
 } from "@/components/lesson/LessonProgressPanel";
@@ -75,99 +77,80 @@ const difficultyColors: Record<string, string> = {
   challenging: "bg-violet-100 text-violet-700 border-violet-200",
 };
 
-// Fallback markdown renderer for legacy lessons
-function formatInline(text: string): string {
-  return text
-    .replace(
-      /\*\*(.+?)\*\*/g,
-      '<strong class="font-semibold text-foreground">$1</strong>'
-    )
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(
-      /`(.+?)`/g,
-      '<code class="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-sm font-mono">$1</code>'
-    );
+// Fallback markdown renderer using react-markdown + remark-gfm
+// Supports headings, lists, code blocks, tables, blockquotes, bold, italic, and more
+function MarkdownRenderer({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        h1: ({ children }) => (
+          <h1 className="text-2xl font-extrabold text-foreground mt-6 mb-3 font-heading">{children}</h1>
+        ),
+        h2: ({ children }) => (
+          <h2 className="text-xl font-bold text-foreground mt-6 mb-3">{children}</h2>
+        ),
+        h3: ({ children }) => (
+          <h3 className="text-lg font-bold text-foreground mt-5 mb-2">{children}</h3>
+        ),
+        p: ({ children }) => (
+          <p className="text-foreground/80 leading-relaxed my-2">{children}</p>
+        ),
+        ul: ({ children }) => (
+          <ul className="list-none space-y-1.5 my-3">{children}</ul>
+        ),
+        ol: ({ children }) => (
+          <ol className="list-decimal list-inside space-y-1.5 my-3 text-foreground/80">{children}</ol>
+        ),
+        li: ({ children }) => (
+          <li className="flex items-start gap-2 text-foreground/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+            <span>{children}</span>
+          </li>
+        ),
+        code: ({ className, children, ...props }) => {
+          const isBlock = className?.includes("language-");
+          return isBlock ? (
+            <pre className="bg-[#1e1b4b] text-white/85 rounded-2xl p-4 text-sm font-mono overflow-x-auto my-4 leading-relaxed">
+              <code>{children}</code>
+            </pre>
+          ) : (
+            <code className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-sm font-mono" {...props}>{children}</code>
+          );
+        },
+        pre: ({ children }) => <>{children}</>,
+        blockquote: ({ children }) => (
+          <blockquote className="border-l-4 border-primary/40 pl-4 my-4 text-foreground/70 italic">{children}</blockquote>
+        ),
+        table: ({ children }) => (
+          <div className="overflow-x-auto my-4">
+            <table className="w-full text-sm border-collapse">{children}</table>
+          </div>
+        ),
+        thead: ({ children }) => <thead className="bg-primary/5">{children}</thead>,
+        th: ({ children }) => (
+          <th className="border border-primary/15 px-3 py-2 text-left font-semibold text-foreground">{children}</th>
+        ),
+        td: ({ children }) => (
+          <td className="border border-primary/10 px-3 py-2 text-foreground/80">{children}</td>
+        ),
+        strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+        em: ({ children }) => <em className="italic">{children}</em>,
+        a: ({ href, children }) => (
+          <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80">{children}</a>
+        ),
+        img: ({ src, alt }) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={src} alt={alt ?? ""} className="rounded-xl max-w-full my-4" />
+        ),
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
 }
 
-function renderMarkdown(md: string): React.ReactNode[] {
-  const lines = md.split("\n");
-  const nodes: React.ReactNode[] = [];
-  let i = 0;
 
-  while (i < lines.length) {
-    const line = lines[i];
-
-    if (line.startsWith("### ")) {
-      nodes.push(
-        <h3 key={i} className="text-lg font-bold text-foreground mt-5 mb-2">
-          {line.slice(4)}
-        </h3>
-      );
-    } else if (line.startsWith("## ")) {
-      nodes.push(
-        <h2 key={i} className="text-xl font-bold text-foreground mt-6 mb-3">
-          {line.slice(3)}
-        </h2>
-      );
-    } else if (line.startsWith("# ")) {
-      nodes.push(
-        <h1
-          key={i}
-          className="text-2xl font-extrabold text-foreground mt-6 mb-3 font-heading"
-        >
-          {line.slice(2)}
-        </h1>
-      );
-    } else if (line.startsWith("```")) {
-      const codeLines: string[] = [];
-      i++;
-      while (i < lines.length && !lines[i].startsWith("```")) {
-        codeLines.push(lines[i]);
-        i++;
-      }
-      nodes.push(
-        <pre
-          key={i}
-          className="bg-[#1e1b4b] text-white/85 rounded-2xl p-4 text-sm font-mono overflow-x-auto my-4 leading-relaxed"
-        >
-          <code>{codeLines.join("\n")}</code>
-        </pre>
-      );
-    } else if (line.startsWith("- ") || line.startsWith("* ")) {
-      const items: string[] = [];
-      while (
-        i < lines.length &&
-        (lines[i].startsWith("- ") || lines[i].startsWith("* "))
-      ) {
-        items.push(lines[i].slice(2));
-        i++;
-      }
-      nodes.push(
-        <ul key={i} className="list-none space-y-1.5 my-3">
-          {items.map((item, j) => (
-            <li key={j} className="flex items-start gap-2 text-foreground/80">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
-              <span dangerouslySetInnerHTML={{ __html: formatInline(item) }} />
-            </li>
-          ))}
-        </ul>
-      );
-      continue;
-    } else if (line.trim() === "") {
-      // skip
-    } else {
-      nodes.push(
-        <p
-          key={i}
-          className="text-foreground/80 leading-relaxed my-2"
-          dangerouslySetInnerHTML={{ __html: formatInline(line) }}
-        />
-      );
-    }
-    i++;
-  }
-  return nodes;
-}
 
 export default function LessonView({
   lesson,
@@ -493,7 +476,7 @@ export default function LessonView({
           className="glass-card rounded-3xl p-8 mb-6 shadow-lg shadow-primary/5"
         >
           <div className="prose max-w-none">
-            {renderMarkdown(lesson.content_markdown)}
+            <MarkdownRenderer content={lesson.content_markdown} />
           </div>
         </motion.div>
       )}

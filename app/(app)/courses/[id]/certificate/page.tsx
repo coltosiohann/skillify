@@ -16,6 +16,7 @@ export default async function CertificatePage({ params }: Props) {
   if (!user) redirect("/login");
 
   const [courseRes, profileRes] = await Promise.all([
+    // is_public added in migration 015 — cast needed until types are regenerated
     supabase
       .from("courses")
       .select("id, title, domain, detected_level, duration_weeks, status, created_at")
@@ -30,6 +31,13 @@ export default async function CertificatePage({ params }: Props) {
   ]);
 
   if (!courseRes.data) redirect("/dashboard");
+
+  // Fetch is_public separately — column added in migration 015, not yet in generated types
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: privacyRow } = await (supabase.from("courses") as any)
+    .select("is_public")
+    .eq("id", id)
+    .single() as { data: { is_public?: boolean } | null };
 
   // Verify completion from progress records (handles courses completed before status tracking)
   const { data: allLessons } = await supabase
@@ -72,6 +80,8 @@ export default async function CertificatePage({ params }: Props) {
       recipientName={profileRes.data?.full_name ?? "Learner"}
       totalXp={profileRes.data?.total_xp ?? 0}
       completedAt={completedAt}
+      isPublic={privacyRow?.is_public ?? true}
+      userId={user.id}
     />
   );
 }

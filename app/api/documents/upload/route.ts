@@ -28,9 +28,12 @@ export async function POST(req: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Extract text
+    // Extract text — cap at 12,000 chars
+    const TEXT_LIMIT = 12000;
     const pdfData = await pdf(buffer);
-    const extractedText = pdfData.text.slice(0, 12000);
+    const fullText = pdfData.text;
+    const truncated = fullText.length > TEXT_LIMIT;
+    const extractedText = fullText.slice(0, TEXT_LIMIT);
 
     // Upload to Supabase Storage
     const storagePath = `${user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
@@ -55,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     if (dbErr) throw dbErr;
 
-    return NextResponse.json({ id: doc.id, extractedText });
+    return NextResponse.json({ id: doc.id, extractedText, truncated });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Upload failed";
     return NextResponse.json({ error: msg }, { status: 500 });

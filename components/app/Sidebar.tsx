@@ -19,7 +19,7 @@ import {
   BarChart2,
   Bookmark,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -43,6 +43,18 @@ export default function Sidebar() {
   const { mobileOpen, setMobileOpen } = useSidebar();
   const router = useRouter();
   const supabase = createClient();
+
+  // Keyboard shortcuts: Alt+D = Dashboard, Alt+C = Courses, Alt+N = New Course
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (!e.altKey) return;
+      if (e.key === "d" || e.key === "D") { e.preventDefault(); router.push("/dashboard"); }
+      if (e.key === "c" || e.key === "C") { e.preventDefault(); router.push("/courses"); }
+      if (e.key === "n" || e.key === "N") { e.preventDefault(); router.push("/onboarding"); }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [router]);
 
   async function handleSignOut() {
     await supabase.auth.signOut();

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { generateText } from "@/lib/ai/provider";
 import {
   getAssessmentQuestionsPrompt,
@@ -6,12 +7,13 @@ import {
   type AssessmentQuestion,
 } from "@/lib/prompts/level-assessor";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { z } from "zod";
 
 function parseJSON(raw: string) {
   return JSON.parse(raw.replace(/```json\s*|```/g, "").trim());
 }
 
-function getIdentifier(req: NextRequest): string {
+function getIP(req: NextRequest): string {
   return (
     req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
     req.headers.get("x-real-ip") ??
@@ -19,15 +21,26 @@ function getIdentifier(req: NextRequest): string {
   );
 }
 
-// GET /api/ai/assess?domain=X — generate assessment questions
+const GetSchema = z.object({
+  domain: z.string().min(1).max(200),
+});
+
+const PostSchema = z.object({
+  domain: z.string().min(1).max(200),
+  questions: z.array(z.unknown()),
+  answers: z.record(z.string(), z.string()),
+});
+
+// GET /api/ai/assess?domain=X — generate assessment questions (anonymous, rate limited by IP)
 export async function GET(req: NextRequest) {
-  const domain = req.nextUrl.searchParams.get("domain");
-  if (!domain) {
+  const parsed = GetSchema.safeParse({ domain: req.nextUrl.searchParams.get("domain") });
+  if (!parsed.success) {
     return NextResponse.json({ error: "domain is required" }, { status: 400 });
   }
+  const { domain } = parsed.data;
 
-  // Rate limit: 10 assessments per hour per IP
-  const rl = await checkRateLimit(getIdentifier(req), { limit: 10, windowSec: 3600, prefix: "assess-get" });
+  // Rate limit by IP for anonymous endpoint
+  const rl = await checkRateLimit(getIP(req), { limit: 10, windowSec: 3600, prefix: "assess-get" });
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "Too many requests. Please try again later." },
@@ -51,10 +64,19 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/ai/assess — evaluate level from answers
+// POST /api/ai/assess — evaluate level from answers (uses userId if authenticated, else IP)
 export async function POST(req: NextRequest) {
-  // Rate limit: 10 evaluations per hour per IP
-  const rl = await checkRateLimit(getIdentifier(req), { limit: 10, windowSec: 3600, prefix: "assess-post" });
+  // Try to get authenticated user; fall back to IP for unauthenticated calls
+  const supabase = await createClient();
+  let rateLimitKey: string;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    rateLimitKey = user ? `user:${user.id}` : getIP(req);
+  } catch {
+    rateLimitKey = getIP(req);
+  }
+
+  const rl = await checkRateLimit(rateLimitKey, { limit: 10, windowSec: 3600, prefix: "assess-post" });
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "Too many requests. Please try again later." },
@@ -65,15 +87,19 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  let body: z.infer<typeof PostSchema>;
   try {
-    const { domain, questions, answers } = (await req.json()) as {
-      domain: string;
-      questions: AssessmentQuestion[];
-      answers: Record<number, string>;
-    };
+    body = PostSchema.parse(await req.json());
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return NextResponse.json({ error: "Invalid request", details: err.flatten() }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
 
+  try {
     const raw = await generateText(
-      getEvaluateLevelPrompt(domain, questions, answers),
+      getEvaluateLevelPrompt(body.domain, body.questions as AssessmentQuestion[], body.answers as Record<number, string>),
       "You are an expert educator. Return only valid JSON."
     );
     const data = parseJSON(raw);

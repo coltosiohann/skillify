@@ -1,6 +1,9 @@
 // Skillify Service Worker — offline lesson caching
-const CACHE_NAME = "skillify-lessons-v1";
-const STATIC_CACHE = "skillify-static-v1";
+// Cache version is injected at build time via public/sw-version.js
+// or defaults to a timestamp so each deploy gets a fresh cache.
+const SW_VERSION = self.__SW_VERSION__ || "v1";
+const CACHE_NAME = `skillify-lessons-${SW_VERSION}`;
+const STATIC_CACHE = `skillify-static-${SW_VERSION}`;
 
 // Static assets to pre-cache
 const STATIC_ASSETS = ["/", "/dashboard"];
@@ -15,6 +18,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
+        // Delete any cache that doesn't match current version
         keys
           .filter((k) => k !== CACHE_NAME && k !== STATIC_CACHE)
           .map((k) => caches.delete(k))
@@ -27,10 +31,10 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Only cache GET requests for lesson pages and their API data
+  // Only cache GET requests
   if (request.method !== "GET") return;
 
-  // Cache lesson page navigations
+  // Cache lesson page navigations (stale-while-revalidate)
   if (url.pathname.match(/^\/courses\/[^/]+\/lesson\/[^/]+$/)) {
     event.respondWith(
       caches.open(CACHE_NAME).then(async (cache) => {

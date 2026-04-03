@@ -1,6 +1,18 @@
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 
+/**
+ * AI model names are configurable via environment variables:
+ *   AI_MODEL_ANTHROPIC — defaults to "claude-opus-4-6"
+ *   AI_MODEL_OPENAI    — defaults to "gpt-4o"
+ *
+ * In development you can set these to cheaper/faster models:
+ *   AI_MODEL_ANTHROPIC=claude-haiku-4-5
+ *   AI_MODEL_OPENAI=gpt-4o-mini
+ */
+const ANTHROPIC_MODEL = process.env.AI_MODEL_ANTHROPIC ?? "claude-opus-4-6";
+const OPENAI_MODEL = process.env.AI_MODEL_OPENAI ?? "gpt-4o";
+
 function hasAnthropicKey() {
   const k = process.env.ANTHROPIC_API_KEY;
   return k && k !== "your_anthropic_api_key";
@@ -25,7 +37,7 @@ export async function generateText(
   if (hasAnthropicKey()) {
     const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const msg = await claude.messages.create({
-      model: "claude-opus-4-6",
+      model: ANTHROPIC_MODEL,
       max_tokens: maxTokens,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
@@ -36,7 +48,7 @@ export async function generateText(
   if (hasOpenAIKey()) {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const res = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: OPENAI_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -59,7 +71,7 @@ export async function streamText(
   if (hasAnthropicKey()) {
     const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const stream = claude.messages.stream({
-      model: "claude-opus-4-6",
+      model: ANTHROPIC_MODEL,
       max_tokens: 16384,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
@@ -78,7 +90,7 @@ export async function streamText(
   if (hasOpenAIKey()) {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const stream = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: OPENAI_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },

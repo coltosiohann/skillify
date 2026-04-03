@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { THEME_KEY } from "@/lib/theme";
+import Script from "next/script";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -57,11 +58,10 @@ export default function RootLayout({
       className={`${inter.variable} ${jakarta.variable} ${jetbrainsMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <head>
-        {/* Anti-FOUC: runs before React hydration */}
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
+        {/* Anti-FOUC: beforeInteractive must be placed in body (not inside <head>) in App Router —
+            Next.js automatically injects it before hydration in the correct position */}
+        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: themeScript }} />
         <ThemeProvider>
           {children}
           <Toaster richColors position="bottom-right" />

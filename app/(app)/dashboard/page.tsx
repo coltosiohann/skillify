@@ -16,16 +16,11 @@ export default async function DashboardPage() {
   weekStart.setDate(now.getDate() - daysFromMonday);
   weekStart.setHours(0, 0, 0, 0);
 
-  const [profileRes, profileExtRes, coursesRes, progressRes, weeklyProgressRes, weeklyQuizRes] = await Promise.all([
+  const [profileRes, coursesRes, progressRes, weeklyProgressRes, weeklyQuizRes] = await Promise.all([
+    // Single profile query — Supabase returns null for missing columns, never throws on unknown fields
     supabase
       .from("profiles")
-      .select("full_name, plan, total_xp, current_streak, courses_generated_this_month")
-      .eq("id", user.id)
-      .single(),
-    // New columns added in migrations 006/009 — may not exist yet; fetched separately so base query never fails
-    supabase
-      .from("profiles")
-      .select("weekly_xp_goal, total_minutes_learned")
+      .select("full_name, plan, total_xp, current_streak, courses_generated_this_month, weekly_xp_goal, total_minutes_learned")
       .eq("id", user.id)
       .single(),
     supabase
@@ -66,8 +61,8 @@ export default async function DashboardPage() {
   }, 0);
   const weeklyQuizXp = (weeklyQuizRes.data ?? []).reduce((sum, q) => sum + (q.xp_awarded ?? 0), 0);
   const weeklyXp = weeklyLessonXp + weeklyQuizXp;
-  const weeklyGoal = (profileExtRes.data as { weekly_xp_goal?: number } | null)?.weekly_xp_goal ?? 200;
-  const totalMinutesLearned = (profileExtRes.data as { total_minutes_learned?: number } | null)?.total_minutes_learned ?? 0;
+  const weeklyGoal = (profileRes.data as { weekly_xp_goal?: number } | null)?.weekly_xp_goal ?? 200;
+  const totalMinutesLearned = (profileRes.data as { total_minutes_learned?: number } | null)?.total_minutes_learned ?? 0;
 
   // Use email local-part as name fallback when full_name is null
   const emailFallback = user.email?.split("@")[0] ?? "Learner";

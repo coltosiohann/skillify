@@ -47,7 +47,11 @@ export default function Step2Upload({ data, onNext, onBack }: Props) {
       setDocumentId(json.id);
       setExtractedText(json.extractedText);
       setUploadState("done");
-      toast.success("File uploaded and text extracted!");
+      if (json.truncated) {
+        toast.warning("PDF was large — only the first portion was used for course generation.");
+      } else {
+        toast.success("File uploaded and text extracted!");
+      }
     } catch (err) {
       setUploadState("error");
       toast.error(err instanceof Error ? err.message : "Upload failed");

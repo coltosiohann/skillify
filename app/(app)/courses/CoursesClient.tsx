@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import {
-  BookOpen, PlusCircle, Search, Clock, Zap, CheckCircle,
-  Circle, MoreHorizontal, ArrowRight
+  BookOpen, PlusCircle, Search, Clock, CheckCircle, ArrowRight
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,10 +47,30 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 const FILTERS = ["All", "Active", "Completed", "Paused"] as const;
 type Filter = typeof FILTERS[number];
 
+function isValidFilter(value: string | null): value is Filter {
+  return FILTERS.includes(value as Filter);
+}
+
 export default function CoursesClient({ courses, completedLessonIds }: Props) {
-  const [filter, setFilter] = useState<Filter>("All");
-  const [search, setSearch] = useState("");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Read filter and search from URL params (persisted across refresh/back navigation)
+  const filter: Filter = isValidFilter(searchParams.get("filter")) ? (searchParams.get("filter") as Filter) : "All";
+  const search = searchParams.get("search") ?? "";
+
   const completedSet = new Set(completedLessonIds);
+
+  const setParam = useCallback((key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value && value !== "All") {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [searchParams, pathname, router]);
 
   const filtered = courses.filter((c) => {
     const matchFilter =
@@ -96,7 +116,7 @@ export default function CoursesClient({ courses, completedLessonIds }: Props) {
           {FILTERS.map((f) => (
             <button
               key={f}
-              onClick={() => setFilter(f)}
+              onClick={() => setParam("filter", f)}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer ${
                 filter === f
                   ? "bg-primary text-white shadow-sm shadow-primary/25"
@@ -112,7 +132,7 @@ export default function CoursesClient({ courses, completedLessonIds }: Props) {
           <Input
             placeholder="Search courses..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => setParam("search", e.target.value)}
             className="pl-9 rounded-xl bg-muted border-0 focus-visible:ring-primary/20 text-sm w-full sm:w-56"
           />
         </div>

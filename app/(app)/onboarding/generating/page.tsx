@@ -230,7 +230,7 @@ export default function GeneratingPage() {
       if (courseErr) throw courseErr;
       const cId = courseRow.id;
 
-      // Insert modules + lessons
+      // Insert modules + lessons (batch inserts per module to avoid N+1)
       for (let mIdx = 0; mIdx < currentOutline.modules.length; mIdx++) {
         const mod = currentOutline.modules[mIdx];
 
@@ -248,11 +248,10 @@ export default function GeneratingPage() {
 
         if (modErr) throw modErr;
 
-        for (let lIdx = 0; lIdx < mod.lessons.length; lIdx++) {
-          const stub = mod.lessons[lIdx];
+        // Build all lesson rows for this module, then insert in a single call
+        const lessonRows = mod.lessons.map((stub, lIdx) => {
           const content = lessonResults.current.get(`${mIdx}-${lIdx}`);
-
-          const { error: lessonErr } = await supabase.from("lessons").insert({
+          return {
             module_id: modRow.id,
             title: stub.title,
             content_markdown: content?.content_markdown ?? `# ${stub.title}\n\nThis lesson content is being prepared.`,
@@ -262,8 +261,12 @@ export default function GeneratingPage() {
             xp_reward: stub.xp_reward ?? 50,
             estimated_minutes: stub.estimated_minutes ?? 8,
             difficulty: stub.difficulty ?? "standard",
-          });
-          if (lessonErr) throw lessonErr;
+          };
+        });
+
+        if (lessonRows.length > 0) {
+          const { error: lessonsErr } = await supabase.from("lessons").insert(lessonRows as never);
+          if (lessonsErr) throw lessonsErr;
         }
       }
 

@@ -1,11 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowLeft, Download, Share2, Trophy, Zap, Star, CheckCircle } from "lucide-react";
+import { ArrowLeft, Download, Share2, Trophy, Zap, Star, CheckCircle, Globe, Lock } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 interface Props {
   course: {
@@ -20,6 +21,8 @@ interface Props {
   recipientName: string;
   totalXp: number;
   completedAt: string;
+  isPublic?: boolean;
+  userId?: string;
 }
 
 const levelLabel: Record<string, string> = {
@@ -28,8 +31,29 @@ const levelLabel: Record<string, string> = {
   advanced: "Advanced",
 };
 
-export default function CertificateView({ course, recipientName, totalXp, completedAt }: Props) {
+export default function CertificateView({ course, recipientName, totalXp, completedAt, isPublic: initialIsPublic = true, userId }: Props) {
   const certRef = useRef<HTMLDivElement>(null);
+  const [isPublic, setIsPublic] = useState(initialIsPublic);
+  const [togglingPrivacy, setTogglingPrivacy] = useState(false);
+  const supabase = createClient();
+
+  async function togglePrivacy() {
+    if (!userId) return;
+    setTogglingPrivacy(true);
+    const next = !isPublic;
+    const { error } = await supabase
+      .from("courses")
+      .update({ is_public: next } as never)
+      .eq("id", course.id)
+      .eq("user_id", userId);
+    if (error) {
+      toast.error("Failed to update privacy setting");
+    } else {
+      setIsPublic(next);
+      toast.success(next ? "Certificate is now public" : "Certificate is now private");
+    }
+    setTogglingPrivacy(false);
+  }
 
   const completedDate = new Date(completedAt).toLocaleDateString("en-US", {
     year: "numeric",
@@ -65,6 +89,19 @@ export default function CertificateView({ course, recipientName, totalXp, comple
           Back to Course
         </Link>
         <div className="flex items-center gap-2">
+          {userId && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={togglePrivacy}
+              disabled={togglingPrivacy}
+              className={`rounded-xl gap-1.5 cursor-pointer ${isPublic ? "border-primary/15" : "border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100"}`}
+              title={isPublic ? "Certificate is public — click to make private" : "Certificate is private — click to make public"}
+            >
+              {isPublic ? <Globe className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+              {isPublic ? "Public" : "Private"}
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"

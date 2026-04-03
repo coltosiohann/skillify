@@ -3,11 +3,35 @@ import { createClient } from "@/lib/supabase/server";
 import { generateText } from "@/lib/ai/provider";
 import { getQuizGeneratorPrompt } from "@/lib/prompts/quiz-generator";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { z } from "zod";
+
+const RequestSchema = z.object({
+  courseId: z.string().uuid(),
+  moduleId: z.string().uuid(),
+});
+
+const QuestionSchema = z.object({
+  question: z.string().min(1),
+  options: z.array(z.string()).min(2).max(6),
+  correct_index: z.number().int().min(0),
+  explanation: z.string().default(""),
+});
+
+const QuizResponseSchema = z.object({
+  questions: z.array(QuestionSchema).min(1).max(20),
+});
 
 export async function POST(req: NextRequest) {
-  const { courseId, moduleId } = await req.json();
-  if (!courseId || !moduleId) {
-    return NextResponse.json({ error: "courseId and moduleId required" }, { status: 400 });
+  let courseId: string, moduleId: string;
+  try {
+    const parsed = RequestSchema.parse(await req.json());
+    courseId = parsed.courseId;
+    moduleId = parsed.moduleId;
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return NextResponse.json({ error: "Invalid request", details: err.flatten() }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
   const supabase = await createClient();
@@ -84,11 +108,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 
-  let parsed: { questions: { question: string; options: string[]; correct_index: number; explanation: string }[] };
+  let parsed: z.infer<typeof QuizResponseSchema>;
   try {
     const cleaned = raw.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
-    parsed = JSON.parse(cleaned);
-  } catch {
+    parsed = QuizResponseSchema.parse(JSON.parse(cleaned));
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return NextResponse.json({ error: "AI returned invalid quiz structure", details: err.flatten() }, { status: 500 });
+    }
     return NextResponse.json({ error: "Failed to parse AI response" }, { status: 500 });
   }
 
