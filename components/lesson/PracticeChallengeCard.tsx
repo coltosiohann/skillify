@@ -20,10 +20,7 @@ export default function PracticeChallengeCard({ challenge }: Props) {
   }
 
   function handleShowSolution() {
-    if (!confirmSolution) {
-      setConfirmSolution(true);
-      return;
-    }
+    if (!confirmSolution) { setConfirmSolution(true); return; }
     setShowSolution(true);
   }
 
@@ -31,25 +28,25 @@ export default function PracticeChallengeCard({ challenge }: Props) {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl overflow-hidden my-6"
+      className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-2xl overflow-hidden my-6"
     >
+      {/* Header / toggle */}
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-3 p-5 text-left cursor-pointer hover:bg-amber-50/50 transition-colors"
+        className="w-full flex items-center gap-3 p-5 text-left cursor-pointer hover:bg-amber-100/50 dark:hover:bg-amber-900/30 transition-colors"
       >
-        <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-          <Code2 className="w-5 h-5 text-amber-600" />
+        <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-800/50 flex items-center justify-center flex-shrink-0">
+          <Code2 className="w-5 h-5 text-amber-600 dark:text-amber-400" />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-semibold text-amber-700">Practice Challenge</p>
+          <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">Practice Challenge</p>
           <p className="text-sm font-bold text-foreground">{challenge.title}</p>
         </div>
-        {expanded ? (
-          <ChevronUp className="w-4 h-4 text-amber-500" />
-        ) : (
-          <ChevronDown className="w-4 h-4 text-amber-500" />
-        )}
+        {expanded
+          ? <ChevronUp className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+          : <ChevronDown className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+        }
       </button>
 
       <AnimatePresence>
@@ -58,7 +55,7 @@ export default function PracticeChallengeCard({ challenge }: Props) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="border-t border-amber-200"
+            className="border-t border-amber-200 dark:border-amber-700/50"
           >
             <div className="p-5 pt-4">
               <p className="text-sm text-foreground/80 leading-relaxed mb-4">
@@ -69,7 +66,7 @@ export default function PracticeChallengeCard({ challenge }: Props) {
               {challenge.hints.length > 0 && (
                 <div className="mb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-amber-700 flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
                       <Lightbulb className="w-3.5 h-3.5" />
                       Hints ({hintsRevealed}/{challenge.hints.length})
                     </span>
@@ -77,7 +74,7 @@ export default function PracticeChallengeCard({ challenge }: Props) {
                       <button
                         type="button"
                         onClick={revealNextHint}
-                        className="text-xs text-amber-600 hover:text-amber-700 font-medium cursor-pointer"
+                        className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium cursor-pointer"
                       >
                         Show hint
                       </button>
@@ -89,9 +86,9 @@ export default function PracticeChallengeCard({ challenge }: Props) {
                         key={i}
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="flex items-start gap-2 p-2.5 bg-card/60 rounded-lg border border-amber-100 dark:border-amber-900/50"
+                        className="flex items-start gap-2 p-2.5 bg-card rounded-lg border border-amber-200 dark:border-amber-700/50"
                       >
-                        <span className="text-amber-500 text-xs font-bold mt-0.5">💡</span>
+                        <Lightbulb className="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm text-foreground/70">{hint}</span>
                       </motion.div>
                     ))}
@@ -99,15 +96,15 @@ export default function PracticeChallengeCard({ challenge }: Props) {
                 </div>
               )}
 
-              {/* Solution */}
+              {/* Solution toggle */}
               {!showSolution ? (
                 <button
                   type="button"
                   onClick={handleShowSolution}
                   className={`flex items-center gap-2 text-sm font-medium cursor-pointer transition-colors ${
                     confirmSolution
-                      ? "text-red-500 hover:text-red-600"
-                      : "text-amber-600 hover:text-amber-700"
+                      ? "text-red-500 dark:text-red-400 hover:text-red-600"
+                      : "text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300"
                   }`}
                 >
                   <Eye className="w-4 h-4" />
@@ -117,9 +114,9 @@ export default function PracticeChallengeCard({ challenge }: Props) {
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-card/70 border border-amber-100 dark:border-amber-900/50 rounded-xl p-4"
+                  className="bg-card border border-amber-200 dark:border-amber-700/50 rounded-xl p-4"
                 >
-                  <p className="text-xs font-semibold text-amber-700 mb-2 flex items-center gap-1.5">
+                  <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-2 flex items-center gap-1.5">
                     <Eye className="w-3.5 h-3.5" /> Solution
                   </p>
                   <div className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">

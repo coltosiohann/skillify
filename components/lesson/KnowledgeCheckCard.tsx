@@ -27,29 +27,38 @@ export default function KnowledgeCheckCard({ check, onAnswered }: Props) {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-200 rounded-2xl p-6 my-6"
+      className="bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-700/50 rounded-2xl p-6 my-6"
     >
+      {/* Header */}
       <div className="flex items-center gap-2 mb-4">
-        <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
-          <Brain className="w-4 h-4 text-violet-600" />
+        <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-800/50 flex items-center justify-center">
+          <Brain className="w-4 h-4 text-violet-600 dark:text-violet-400" />
         </div>
-        <span className="text-sm font-semibold text-violet-700">Quick Check</span>
+        <span className="text-sm font-semibold text-violet-700 dark:text-violet-400">Quick Check</span>
       </div>
 
       <p className="font-semibold text-foreground mb-4">{check.question}</p>
 
+      {/* Options */}
       <div className="space-y-2">
         {check.options.map((option, i) => {
-          let style = "border-primary/15 hover:border-primary/30 hover:bg-primary/5";
+          let containerStyle = "border-primary/15 bg-background dark:bg-card hover:border-primary/40 hover:bg-primary/5";
+          let labelStyle = "text-foreground";
+
           if (answered) {
             if (i === check.correct_index) {
-              style = "border-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 dark:border-emerald-600";
+              containerStyle = "border-emerald-400 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30";
+              labelStyle = "text-emerald-800 dark:text-emerald-300 font-medium";
             } else if (i === selected) {
-              style = "border-red-400 bg-red-50 dark:bg-red-900/30 dark:border-red-600";
+              containerStyle = "border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/30";
+              labelStyle = "text-red-800 dark:text-red-300";
             } else {
-              style = "border-primary/10 opacity-50";
+              containerStyle = "border-primary/10 opacity-40";
             }
           }
+
+          const isThisCorrect = answered && i === check.correct_index;
+          const isThisWrong   = answered && i === selected && i !== check.correct_index;
 
           return (
             <button
@@ -57,45 +66,59 @@ export default function KnowledgeCheckCard({ check, onAnswered }: Props) {
               type="button"
               onClick={() => handleSelect(i)}
               disabled={answered}
-              className={`w-full text-left p-3.5 rounded-xl border transition-all text-sm cursor-pointer ${style} ${
+              className={`w-full text-left p-3.5 rounded-xl border transition-all text-sm cursor-pointer disabled:cursor-default ${containerStyle} ${
                 !answered ? "active:scale-[0.98]" : ""
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className="w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold flex-shrink-0
-                  ${answered && i === check.correct_index ? 'border-emerald-500 text-emerald-600' :
-                    answered && i === selected ? 'border-red-500 text-red-600' : 'border-primary/30 text-primary/60'}">
-                  {answered && i === check.correct_index ? (
-                    <CheckCircle className="w-4 h-4 text-emerald-500" />
-                  ) : answered && i === selected ? (
-                    <XCircle className="w-4 h-4 text-red-500" />
+                {/* Radio indicator */}
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  isThisCorrect
+                    ? "bg-emerald-100 dark:bg-emerald-800/50"
+                    : isThisWrong
+                    ? "bg-red-100 dark:bg-red-800/50"
+                    : "bg-primary/10 dark:bg-primary/20"
+                }`}>
+                  {isThisCorrect ? (
+                    <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  ) : isThisWrong ? (
+                    <XCircle className="w-4 h-4 text-red-500 dark:text-red-400" />
                   ) : (
-                    String.fromCharCode(65 + i)
+                    <span className="text-xs font-bold text-primary/70 dark:text-primary/60">
+                      {String.fromCharCode(65 + i)}
+                    </span>
                   )}
                 </span>
-                <span className={answered && i === check.correct_index ? "font-medium text-emerald-700" : ""}>
-                  {option}
-                </span>
+                <span className={labelStyle}>{option}</span>
               </div>
             </button>
           );
         })}
       </div>
 
+      {/* Explanation */}
       {answered && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
-          className={`mt-4 p-4 rounded-xl ${isCorrect ? "bg-emerald-100 border border-emerald-200" : "bg-amber-50 border border-amber-200"}`}
+          className={`mt-4 p-4 rounded-xl border ${
+            isCorrect
+              ? "bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700"
+              : "bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-700"
+          }`}
         >
           <div className="flex items-start gap-2">
             {isCorrect ? (
-              <CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+              <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
             ) : (
-              <XCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <XCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
             )}
             <div>
-              <p className={`text-sm font-semibold ${isCorrect ? "text-emerald-700" : "text-amber-700"}`}>
+              <p className={`text-sm font-semibold ${
+                isCorrect
+                  ? "text-emerald-700 dark:text-emerald-400"
+                  : "text-amber-700 dark:text-amber-400"
+              }`}>
                 {isCorrect ? "Correct!" : "Not quite right"}
               </p>
               <p className="text-sm text-foreground/70 mt-1">{check.explanation}</p>
