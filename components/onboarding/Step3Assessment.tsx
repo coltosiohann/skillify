@@ -16,9 +16,24 @@ interface Question {
 type LoadState = "loading" | "ready" | "evaluating" | "done" | "error" | "skip";
 
 const levelColors = {
-  beginner: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", badge: "bg-emerald-100 text-emerald-700" },
-  intermediate: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", badge: "bg-blue-100 text-blue-700" },
-  advanced: { bg: "bg-violet-50", border: "border-violet-200", text: "text-violet-700", badge: "bg-violet-100 text-violet-700" },
+  beginner: {
+    bg: "bg-emerald-50 dark:bg-emerald-900/20",
+    border: "border-emerald-200 dark:border-emerald-700",
+    text: "text-emerald-700 dark:text-emerald-400",
+    badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
+  },
+  intermediate: {
+    bg: "bg-blue-50 dark:bg-blue-900/20",
+    border: "border-blue-200 dark:border-blue-700",
+    text: "text-blue-700 dark:text-blue-400",
+    badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
+  },
+  advanced: {
+    bg: "bg-violet-50 dark:bg-violet-900/20",
+    border: "border-violet-200 dark:border-violet-700",
+    text: "text-violet-700 dark:text-violet-400",
+    badge: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400",
+  },
 };
 
 interface Props {
@@ -122,7 +137,7 @@ export default function Step3Assessment({ data, onNext, onBack }: Props) {
         {/* Error */}
         {state === "error" && (
           <div className="flex flex-col items-center gap-4 py-6">
-            <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-red-50 dark:bg-red-900/30 rounded-2xl flex items-center justify-center">
               <AlertCircle className="w-6 h-6 text-red-500" />
             </div>
             <div className="text-center">
@@ -159,9 +174,11 @@ export default function Step3Assessment({ data, onNext, onBack }: Props) {
                   Question {current + 1} of {questions.length}
                 </span>
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                  q.difficulty === "beginner" ? "bg-emerald-100 text-emerald-700" :
-                  q.difficulty === "intermediate" ? "bg-blue-100 text-blue-700" :
-                  "bg-violet-100 text-violet-700"
+                  q.difficulty === "beginner"
+                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+                    : q.difficulty === "intermediate"
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400"
+                    : "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400"
                 }`}>
                   {q.difficulty}
                 </span>

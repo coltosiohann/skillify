@@ -53,9 +53,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6"
-      style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, #ede9fe, #f5f3ff 50%, white)" }}
-    >
+    <div className="min-h-screen flex items-center justify-center p-6 onboarding-bg">
       {/* Step dots */}
       <div className="fixed top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
         {[1, 2, 3, 4].map((i) => (

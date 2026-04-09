@@ -171,6 +171,15 @@
     border: 1px solid rgba(167, 139, 250, 0.15);
   }
 
+  /* Onboarding & full-page wizard backgrounds — dark mode aware */
+  .onboarding-bg {
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, #ede9fe, #f5f3ff 50%, #ffffff);
+  }
+
+  .dark .onboarding-bg {
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, #2e1b5e, #1a1033 50%, #0f0a1e);
+  }
+
   .sparkle-bg {
     background-image:
       radial-gradient(circle at 20% 30%, rgba(124, 58, 237, 0.06) 0%, transparent 50%),
