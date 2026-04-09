@@ -3,6 +3,7 @@ import { generateText } from "@/lib/ai/provider";
 import {
   getCourseOutlinePrompt,
   getLessonContentPrompt,
+  COURSE_SYSTEM_PROMPT,
   type CourseGeneratorParams,
 } from "@/lib/prompts/course-generator";
 import { createClient } from "@/lib/supabase/server";
@@ -17,8 +18,9 @@ import type {
   ErrorEventData,
 } from "@/lib/types/generation-events";
 
-const SYSTEM_PROMPT =
-  "You are an expert curriculum designer. Return only valid JSON — no markdown, no extra text.";
+// Temperatures: higher for the creative outline, lower for accurate lesson content
+const OUTLINE_TEMP = 0.7;
+const LESSON_TEMP  = 0.4;
 
 // ─── SSE helpers ──────────────────────────────────────────────────────────────
 
@@ -36,12 +38,13 @@ function parseJSON<T>(raw: string): T {
 async function generateWithRetry<T>(
   prompt: string,
   maxRetries: number,
-  maxTokens: number
+  maxTokens: number,
+  temperature?: number
 ): Promise<T> {
   let lastError: Error = new Error("Unknown error");
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      const raw = await generateText(prompt, SYSTEM_PROMPT, { maxTokens });
+      const raw = await generateText(prompt, COURSE_SYSTEM_PROMPT, { maxTokens, temperature });
       return parseJSON<T>(raw);
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
@@ -131,8 +134,9 @@ export async function POST(req: NextRequest) {
         try {
           outline = await generateWithRetry<CourseOutline>(
             getCourseOutlinePrompt(body),
-            1, // retry once if parse fails or structure is wrong
-            8192
+            1,
+            8192,
+            OUTLINE_TEMP
           );
 
           // Validate structure; retry once if counts are off
@@ -142,14 +146,14 @@ export async function POST(req: NextRequest) {
             lessonsPerModule
           );
           if (validationError) {
-            // One more attempt with an explicit correction note
             const correctionPrompt =
               getCourseOutlinePrompt(body) +
               `\n\nPREVIOUS ATTEMPT FAILED: ${validationError}. Fix this and return the correct number of modules and lessons.`;
             outline = await generateWithRetry<CourseOutline>(
               correctionPrompt,
               0,
-              8192
+              8192,
+              OUTLINE_TEMP
             );
           }
         } catch (err) {
@@ -177,6 +181,10 @@ export async function POST(req: NextRequest) {
         let current = 0;
         const lessonResults = new Map<string, LessonPayload>();
 
+        // Pre-compute course-level context passed into every lesson prompt
+        const allModuleTitles = outline.modules.map((m) => m.title);
+        const courseLearningOutcomes = outline.learning_outcomes ?? [];
+
         for (let mIdx = 0; mIdx < outline.modules.length; mIdx++) {
           const mod = outline.modules[mIdx];
 
@@ -184,7 +192,7 @@ export async function POST(req: NextRequest) {
             const stub = mod.lessons[lIdx];
             current++;
 
-            // Collect up to 3 previous lesson titles for continuity
+            // Up to 3 previous lesson titles within this module for continuity
             const previousLessonTitles = mod.lessons
               .slice(0, lIdx)
               .map((l) => l.title)
@@ -206,9 +214,15 @@ export async function POST(req: NextRequest) {
                   includePractice,
                   previousLessonTitles,
                   pdfContext: body.pdfContext,
+                  // Course-level context (new)
+                  courseTitle: outline.title,
+                  courseLearningOutcomes,
+                  allModuleTitles,
+                  learningObjective: stub.learning_objective ?? `By the end of this lesson you can work with ${stub.title}`,
                 }),
-                2, // retry up to 2 times per lesson
-                8192
+                2,
+                8192,
+                LESSON_TEMP
               );
 
               lessonResults.set(`${mIdx}-${lIdx}`, lessonPayload);

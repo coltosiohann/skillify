@@ -1,18 +1,4 @@
-export interface LessonContentPromptParams {
-  domain: string;
-  level: "beginner" | "intermediate" | "advanced";
-  learningStyle: "theory" | "practical" | "balanced";
-  moduleTitle: string;
-  moduleDescription: string;
-  lessonTitle: string;
-  lessonIndex: number;       // 0-based within module
-  totalLessonsInModule: number;
-  estimatedMinutes: number;
-  difficulty: "easy" | "standard" | "challenging";
-  includePractice: boolean;
-  previousLessonTitles: string[]; // up to 3 prior lesson titles for continuity
-  pdfContext?: string;
-}
+// ─── Shared types ─────────────────────────────────────────────────────────────
 
 export interface CourseGeneratorParams {
   domain: string;
@@ -23,11 +9,229 @@ export interface CourseGeneratorParams {
   pdfContext?: string;
 }
 
+export interface LessonContentPromptParams {
+  // Lesson identity
+  domain: string;
+  level: "beginner" | "intermediate" | "advanced";
+  learningStyle: "theory" | "practical" | "balanced";
+  moduleTitle: string;
+  moduleDescription: string;
+  lessonTitle: string;
+  lessonIndex: number;
+  totalLessonsInModule: number;
+  estimatedMinutes: number;
+  difficulty: "easy" | "standard" | "challenging";
+  includePractice: boolean;
+  previousLessonTitles: string[];
+  pdfContext?: string;
+  // Course context (new — prevents drift between lessons)
+  courseTitle: string;
+  courseLearningOutcomes: string[];
+  allModuleTitles: string[];
+  learningObjective: string;
+}
+
+// ─── System prompt ────────────────────────────────────────────────────────────
+
+export const COURSE_SYSTEM_PROMPT = `You are Skillify's Lead Curriculum Architect — a world-class instructional designer with deep expertise in adult learning theory, Bloom's taxonomy, cognitive load theory, and the worked-example / faded-guidance method.
+
+Your courses are known for:
+• Concrete, domain-specific examples — never generic placeholders or filler
+• Lessons that build a tight, progressive arc (each lesson assumes the last)
+• Second-person voice ("you'll learn...", "you can now...") that respects the learner
+• Defining every jargon term the first time it appears
+• Knowledge checks that test transfer and application, not memorisation
+• Specific, outcome-oriented lesson titles — not "Introduction to X"
+
+Return ONLY valid JSON conforming exactly to the requested schema. No markdown fences, no prose commentary, no apologies. Begin with { and end with }.`;
+
+// ─── Learning style descriptions ──────────────────────────────────────────────
+
 const styleDesc = {
-  theory: "focus on deep conceptual understanding, explanations, and theory",
-  practical: "focus on hands-on projects, exercises, and real-world application",
-  balanced: "balance theory with practical exercises equally",
+  theory:     "focus on deep conceptual understanding, mental models, and first-principles reasoning",
+  practical:  "focus on hands-on tasks, real projects, and learning by doing",
+  balanced:   "alternate between clear explanations and immediate hands-on practice",
 } as const;
+
+// ─── Phase 1: Course Outline ──────────────────────────────────────────────────
+
+export function getCourseOutlinePrompt(p: CourseGeneratorParams): string {
+  const lessonsPerModule = p.minutesPerDay <= 15 ? 3 : p.minutesPerDay <= 30 ? 4 : 5;
+  const totalLessons = p.durationWeeks * lessonsPerModule;
+  const totalMinutes = p.durationWeeks * 7 * p.minutesPerDay;
+  const avgMin = Math.round(totalMinutes / totalLessons);
+  const minSum = Math.round(totalMinutes * 0.85);
+  const maxSum = Math.round(totalMinutes * 1.15);
+
+  return `Design a ${p.durationWeeks}-week course on "${p.domain}" for a ${p.level} learner.
+
+LEARNER PROFILE
+• Skill level: ${p.level}
+• Daily commitment: ${p.minutesPerDay} minutes/day
+• Learning style: ${p.learningStyle} — ${styleDesc[p.learningStyle]}
+• Total time budget: ${totalMinutes} minutes across ${totalLessons} lessons (~${avgMin} min average)
+${p.pdfContext ? `\nLEARNER MATERIALS — use to personalise scope, examples, and terminology:\n"""\n${p.pdfContext.slice(0, 2500)}\n"""\n` : ""}
+DESIGN PRINCIPLES — apply all of these:
+1. Backwards design: decide what the learner can confidently DO at the end of week ${p.durationWeeks}, then design backwards from that goal.
+2. Bloom's progression across weeks:
+   - Weeks 1–${Math.ceil(p.durationWeeks / 3)}: Remember / Understand (concepts, vocabulary, foundational models)
+   - Weeks ${Math.ceil(p.durationWeeks / 3) + 1}–${Math.ceil(p.durationWeeks * 2 / 3)}: Apply / Analyse (use the concepts, spot patterns, solve problems)
+   - Weeks ${Math.ceil(p.durationWeeks * 2 / 3) + 1}–${p.durationWeeks}: Evaluate / Create (critique, build, tackle open-ended problems)
+3. Each module must have ONE tight, specific theme. Never use vague titles like "Advanced Topics", "Miscellaneous", or "Wrap-up".
+4. Lesson titles must be outcome-oriented and specific to ${p.domain}:
+   - BAD:  "Introduction to Variables"
+   - GOOD: "Store and reuse data with variables and constants"
+5. Time budget: easy lessons 5–8 min, standard 8–12 min, challenging 12–15 min. The sum of all estimated_minutes must be between ${minSum} and ${maxSum}.
+6. Logical progression within each module: each lesson builds directly on the previous one.
+
+OUTPUT SCHEMA — return JSON matching this exactly:
+{
+  "title": string,              // specific, benefit-driven — NOT "Learn ${p.domain}" or "${p.domain} for Beginners"
+  "description": string,        // 2–3 sentences: concrete capability the learner gains by the end
+  "learning_outcomes": string[], // exactly 4–6 items, each starting with an action verb (e.g. "Build...", "Explain...", "Debug...")
+  "modules": [                  // EXACTLY ${p.durationWeeks} items
+    {
+      "title": string,          // theme + outcome, e.g. "Core syntax: write and run your first programs"
+      "description": string,    // 1–2 sentences on what the learner masters this week and why it matters
+      "order_index": number,    // 0-based
+      "duration_days": 7,
+      "lessons": [              // EXACTLY ${lessonsPerModule} items
+        {
+          "title": string,           // specific, outcome-oriented, ${p.level}-appropriate
+          "order_index": number,     // 0-based within module
+          "xp_reward": number,       // 50 for easy/standard, 75 for standard/challenging, 100 for most challenging
+          "estimated_minutes": number, // 5–15
+          "difficulty": "easy" | "standard" | "challenging",
+          "learning_objective": string // one sentence: "By the end of this lesson you can ___"
+        }
+      ]
+    }
+  ]
+}
+
+HARD CONSTRAINTS — violating any of these causes the output to be rejected and regenerated:
+• Exactly ${p.durationWeeks} module objects in "modules"
+• Exactly ${lessonsPerModule} lesson objects inside every module's "lessons" array (${totalLessons} lessons total)
+• No lesson title may be identical or near-identical to another lesson title in the course
+• The word "Introduction" may only appear in the title of lesson 1 of module 1
+• Sum of all estimated_minutes must be between ${minSum} and ${maxSum}
+• learning_outcomes must have between 4 and 6 items
+• Every learning_objective must start with "By the end of this lesson you can"
+
+Return JSON only. Begin with { and end with }.`;
+}
+
+// ─── Phase 2: Single Lesson Content ──────────────────────────────────────────
+
+export function getLessonContentPrompt(p: LessonContentPromptParams): string {
+  const sectionCount = p.estimatedMinutes <= 8 ? 3 : 4;
+  const wordRange = p.estimatedMinutes <= 8 ? "120–180" : "180–260";
+  const prevContext = p.previousLessonTitles.length > 0
+    ? `\nALREADY COVERED in this module — do not repeat or re-explain: ${p.previousLessonTitles.map(t => `"${t}"`).join(", ")}`
+    : "";
+  const checkIndices = sectionCount === 4 ? ["section-2", "section-4"] : ["section-2", "section-3"];
+
+  return `Write the full content for ONE lesson. Make it the best lesson in the course.
+
+═══ COURSE CONTEXT ═══
+Course: "${p.courseTitle}"
+What the learner achieves by the end of the whole course:
+${p.courseLearningOutcomes.map(o => `  • ${o}`).join("\n")}
+
+Full module arc (${p.allModuleTitles.length} modules):
+${p.allModuleTitles.map((t, i) => `  ${i + 1}. ${t}`).join("\n")}
+
+═══ THIS LESSON ═══
+Title: "${p.lessonTitle}"
+Learning objective: ${p.learningObjective}
+Position: lesson ${p.lessonIndex + 1} of ${p.totalLessonsInModule} in module "${p.moduleTitle}"
+Module focus: ${p.moduleDescription}
+Difficulty: ${p.difficulty} · Target reading time: ${p.estimatedMinutes} min${prevContext}
+${p.pdfContext ? `\nLEARNER REFERENCE MATERIAL — use to ground examples and vocabulary:\n"""\n${p.pdfContext.slice(0, 1500)}\n"""\n` : ""}
+═══ LEARNER ═══
+Level: ${p.level} · Style: ${p.learningStyle} (${styleDesc[p.learningStyle]})
+
+═══ QUALITY BAR — apply every rule ═══
+1. SECOND PERSON: write directly to "you", never "the learner" or "one should".
+2. CONCRETE BEFORE ABSTRACT: open every concept with a real ${p.domain} scenario, not a definition.
+3. DEFINE JARGON: every domain-specific term gets a one-sentence plain-English definition on first use.
+4. TIGHT PROGRESSION: each section advances on the previous — no filler, no redundancy.
+5. WORKED EXAMPLES with explicit reasoning: show the step AND explain "we do this because…".
+6. CUT HEDGING: "it can be useful in some cases" → delete. "Use it when X happens" → keep.
+7. SECTION TITLES must be specific (not "Introduction", "Overview", "Summary").
+
+═══ KNOWLEDGE CHECK RULES — read carefully ═══
+Write exactly 2 multiple-choice questions. For each question:
+• Write 4 options where the 3 wrong ones are PLAUSIBLE mistakes a real learner would make — not absurd foils.
+• Choose a RANDOM integer 0–3 for correct_index. Think of a number before writing options, then place the correct answer at that position.
+• SELF-CHECK: after writing, verify the option at correct_index is actually the right answer.
+• The two questions must NOT both have correct_index = 0. If they do, change one.
+• "explanation" must say why the WRONG options are wrong — not just restate the correct answer.
+• Questions must test APPLICATION or TRANSFER (not "what did the lesson say about X").
+
+═══ OUTPUT SCHEMA ═══
+{
+  "content_json": {
+    "sections": [
+      {
+        "id": "section-1",
+        "title": string,           // specific to this lesson's topic
+        "type": "concept",
+        "content_markdown": string // open with a real scenario, then explain — ${wordRange} words
+      },
+      {
+        "id": "section-2",
+        "title": string,
+        "type": "example",
+        "content_markdown": string // complete worked example with step-by-step reasoning — ${wordRange} words
+      },
+      {
+        "id": "section-3",
+        "title": string,
+        "type": "deep-dive",
+        "content_markdown": string // common mistakes, edge cases, mental models — ${wordRange} words
+      }${sectionCount === 4 ? `,
+      {
+        "id": "section-4",
+        "title": string,
+        "type": "practice",
+        "content_markdown": string // how this is applied in real ${p.domain} work — ${wordRange} words
+      }` : ""}
+    ],
+    "knowledge_checks": [
+      {
+        "after_section": "${checkIndices[0]}",
+        "question": string,        // tests application, not recall
+        "options": [string, string, string, string],
+        "correct_index": number,   // 0–3, RANDOMISED — place correct answer here
+        "explanation": string      // explains why each wrong option is wrong
+      },
+      {
+        "after_section": "${checkIndices[1]}",
+        "question": string,        // different type of question from check #1
+        "options": [string, string, string, string],
+        "correct_index": number,   // must differ from check #1's correct_index if possible
+        "explanation": string
+      }
+    ],
+    "key_takeaways": string[]      // exactly ${sectionCount === 4 ? 4 : 3} items, each starts with a verb, max 20 words each${p.includePractice ? `,
+    "practice_challenge": {
+      "title": string,
+      "description": string,       // specific task with concrete success criteria — not vague ("build something")
+      "hints": [string, string],   // progressive: hint 1 nudges direction, hint 2 gives a concrete starting point
+      "solution_markdown": string  // complete solution with explanation of every key decision"
+    }` : ""}
+  },
+  "content_markdown": string,      // all sections concatenated as a single markdown string (fallback renderer)
+  "resources_json": [              // 2–3 items — NO URLs, Skillify resolves them
+    { "type": "article" | "video" | "docs", "title": string, "search_query": string }
+  ]
+}
+
+Return JSON only. Begin with { and end with }.`;
+}
+
+// ─── Legacy prompt (kept for /api/ai/generate route) ─────────────────────────
 
 export function getCourseGeneratorPrompt(p: CourseGeneratorParams): string {
   const lessonsPerModule = p.minutesPerDay <= 15 ? 3 : p.minutesPerDay <= 30 ? 4 : 5;
@@ -41,19 +245,17 @@ Learner profile:
 - Learning style: ${p.learningStyle} (${styleDesc[p.learningStyle]})
 - Duration: ${p.durationWeeks} weeks${
     p.pdfContext
-      ? `\n\nContext from uploaded materials (use this to personalize the course):\n${p.pdfContext.slice(0, 3000)}`
+      ? `\n\nContext from uploaded materials:\n${p.pdfContext.slice(0, 3000)}`
       : ""
   }
 
 Create ${p.durationWeeks} modules (one per week), each with ${lessonsPerModule} lessons.
 
-IMPORTANT: Each lesson must use the structured "content_json" format with progressive sections, inline knowledge checks, and key takeaways. This creates an interactive learning experience.
-
 Return ONLY valid JSON — no markdown, no extra text:
 
 {
-  "title": "Engaging course title (not generic)",
-  "description": "2-3 sentence overview of what the learner will achieve",
+  "title": "Engaging course title",
+  "description": "2-3 sentence overview",
   "modules": [
     {
       "title": "Module title",
@@ -67,273 +269,12 @@ Return ONLY valid JSON — no markdown, no extra text:
           "xp_reward": 50,
           "estimated_minutes": 8,
           "difficulty": "standard",
-          "content_markdown": "Full lesson as a single markdown string (concatenation of all sections — this is the fallback)",
-          "resources_json": [
-            {"type": "article", "title": "Resource name", "url": "https://example.com"},
-            {"type": "video", "title": "Video name", "url": "https://youtube.com/..."}
-          ],
-          "content_json": {
-            "sections": [
-              {
-                "id": "section-1",
-                "title": "Introduction",
-                "content_markdown": "100-200 words introducing the concept with clear explanation",
-                "type": "concept"
-              },
-              {
-                "id": "section-2",
-                "title": "How It Works",
-                "content_markdown": "100-200 words with examples, code snippets, or detailed breakdown",
-                "type": "example"
-              },
-              {
-                "id": "section-3",
-                "title": "Going Deeper",
-                "content_markdown": "100-200 words exploring nuances, edge cases, or advanced aspects",
-                "type": "deep-dive"
-              }
-            ],
-            "knowledge_checks": [
-              {
-                "after_section": "section-2",
-                "question": "A question testing understanding of the concept just taught",
-                "options": ["Option A", "Option B", "Option C", "Option D"],
-                "correct_index": 0,
-                "explanation": "Brief explanation of why this answer is correct"
-              }
-            ],
-            "key_takeaways": [
-              "First key point to remember",
-              "Second key point to remember",
-              "Third key point to remember"
-            ]${includePractice ? `,
-            "practice_challenge": {
-              "title": "Challenge title",
-              "description": "A hands-on exercise for the learner to try",
-              "hints": ["First hint", "Second hint"],
-              "solution_markdown": "The solution with explanation"
-            }` : ""}
-          }
+          "content_markdown": "Full lesson content",
+          "resources_json": [],
+          "content_json": null
         }
       ]
     }
   ]
-}
-
-Rules:
-- Each lesson MUST have 3-4 sections in content_json.sections
-- Section types: "concept" for theory, "example" for worked examples, "deep-dive" for advanced content, "practice" for exercises
-- Each lesson MUST have 1-2 knowledge_checks placed after relevant sections
-- Each lesson MUST have 3-5 key_takeaways
-- ${includePractice ? "Each lesson MUST have a practice_challenge" : "practice_challenge is optional"}
-- content_markdown must be a concatenation of all section content (as fallback)
-- Content must be ${p.level}-appropriate, not too basic or too advanced
-- Use real, well-known URLs (MDN, official docs, YouTube, freeCodeCamp, Khan Academy, etc.)
-- XP: 50 for standard, 75 for challenging, 100 for very challenging lessons
-- estimated_minutes: realistic estimate (5-15 min per lesson)
-- difficulty: "easy", "standard", or "challenging"
-- Knowledge check questions must directly test what was just taught in the preceding sections
-- Key takeaways must be concise, actionable, and memorable`;
-}
-
-// ─── Phase 1: Course Outline Prompt ──────────────────────────────────────────
-
-export function getCourseOutlinePrompt(p: CourseGeneratorParams): string {
-  const lessonsPerModule = p.minutesPerDay <= 15 ? 3 : p.minutesPerDay <= 30 ? 4 : 5;
-  const totalLessons = p.durationWeeks * lessonsPerModule;
-  const totalMinutes = p.durationWeeks * 7 * p.minutesPerDay;
-  const avgMinutesPerLesson = Math.round(totalMinutes / totalLessons);
-
-  return `Create a course outline for a ${p.durationWeeks}-week course on "${p.domain}" for a ${p.level}-level learner.
-
-Learner profile:
-- Level: ${p.level}
-- Daily study time: ${p.minutesPerDay} minutes/day
-- Learning style: ${p.learningStyle} (${styleDesc[p.learningStyle]})
-- Total duration: ${p.durationWeeks} weeks${
-    p.pdfContext
-      ? `\n\nContext from uploaded materials (use this to personalise the course):\n${p.pdfContext.slice(0, 2000)}`
-      : ""
-  }
-
-REQUIREMENTS — read carefully:
-1. Generate EXACTLY ${p.durationWeeks} modules (one per week). Count them before responding.
-2. Each module must have EXACTLY ${lessonsPerModule} lessons. Count them before responding.
-3. Total lessons: ${totalLessons}. Do NOT abbreviate with "..." or skip any.
-4. Time budget: the learner has ${totalMinutes} total minutes. Distribute estimated_minutes across all ${totalLessons} lessons so they sum to approximately ${totalMinutes}. Average ~${avgMinutesPerLesson} min/lesson. Use 5-8 min for easy/intro lessons, 10-15 min for complex ones.
-5. Module progression:
-   - Modules 1-${Math.min(2, p.durationWeeks)}: Foundations and core concepts
-   ${p.durationWeeks > 4 ? `- Middle modules: Building skills, applying knowledge, deeper exploration` : ""}
-   - Final module${p.durationWeeks > 1 ? "s" : ""}: Advanced topics, real-world application${p.durationWeeks >= 4 ? ", capstone thinking" : ""}
-6. Lesson titles within each module must progress logically — each lesson should build on the previous one.
-
-Return ONLY valid JSON — no markdown, no extra text. The JSON must have EXACTLY ${p.durationWeeks} items in "modules" and EXACTLY ${lessonsPerModule} items in each "lessons" array:
-
-{
-  "title": "Specific, engaging course title",
-  "description": "2-3 sentences describing what the learner will achieve by the end",
-  "modules": [
-    {
-      "title": "Module 1: Foundations of ${p.domain}",
-      "description": "What this week covers and why it matters",
-      "order_index": 0,
-      "duration_days": 7,
-      "lessons": [
-        {
-          "title": "Getting Started with ${p.domain}",
-          "order_index": 0,
-          "xp_reward": 50,
-          "estimated_minutes": ${Math.min(8, avgMinutesPerLesson)},
-          "difficulty": "easy"
-        },
-        {
-          "title": "Core Concepts Explained",
-          "order_index": 1,
-          "xp_reward": 50,
-          "estimated_minutes": ${avgMinutesPerLesson},
-          "difficulty": "standard"
-        }${lessonsPerModule >= 3 ? `,
-        {
-          "title": "Putting It Into Practice",
-          "order_index": 2,
-          "xp_reward": 75,
-          "estimated_minutes": ${Math.min(15, avgMinutesPerLesson + 2)},
-          "difficulty": "standard"
-        }` : ""}${lessonsPerModule >= 4 ? `,
-        {
-          "title": "Deep Dive: Key Patterns",
-          "order_index": 3,
-          "xp_reward": 75,
-          "estimated_minutes": ${Math.min(15, avgMinutesPerLesson + 3)},
-          "difficulty": "challenging"
-        }` : ""}${lessonsPerModule >= 5 ? `,
-        {
-          "title": "Mini Project: Apply What You Know",
-          "order_index": 4,
-          "xp_reward": 100,
-          "estimated_minutes": 15,
-          "difficulty": "challenging"
-        }` : ""}
-      ]
-    },
-    {
-      "title": "Module 2: Building on the Basics",
-      "description": "What this week covers and why it matters",
-      "order_index": 1,
-      "duration_days": 7,
-      "lessons": [
-        {
-          "title": "Lesson title here",
-          "order_index": 0,
-          "xp_reward": 50,
-          "estimated_minutes": ${avgMinutesPerLesson},
-          "difficulty": "standard"
-        }
-        ... (${lessonsPerModule - 1} more lessons)
-      ]
-    }
-    ... (${p.durationWeeks - 2} more modules, for a total of ${p.durationWeeks})
-  ]
-}
-
-CRITICAL: Your response must contain EXACTLY ${p.durationWeeks} module objects and EXACTLY ${lessonsPerModule} lesson objects inside each module. Verify your count before responding.`;
-}
-
-// ─── Phase 2: Single Lesson Content Prompt ────────────────────────────────────
-
-export function getLessonContentPrompt(p: LessonContentPromptParams): string {
-  const sectionCount = p.estimatedMinutes <= 8 ? 3 : 4;
-  const wordRange = p.estimatedMinutes <= 8 ? "100-150" : "150-250";
-  const prevContext = p.previousLessonTitles.length > 0
-    ? `\nPrevious lessons in this module: ${p.previousLessonTitles.map((t, i) => `"${t}"`).join(", ")}. Build on these — don't repeat what was already covered.`
-    : "";
-
-  return `Generate the full content for ONE lesson in a ${p.domain} course.
-
-Lesson: "${p.lessonTitle}"
-Position: Lesson ${p.lessonIndex + 1} of ${p.totalLessonsInModule} in module "${p.moduleTitle}"
-Module focus: ${p.moduleDescription}${prevContext}
-
-Learner profile:
-- Level: ${p.level}
-- Learning style: ${p.learningStyle} (${styleDesc[p.learningStyle]})
-- Target time: ${p.estimatedMinutes} minutes
-- Difficulty: ${p.difficulty}
-${p.pdfContext ? `\nContext from learner's uploaded materials:\n${p.pdfContext.slice(0, 1500)}\n` : ""}
-Return ONLY valid JSON with these three top-level keys — no markdown, no extra text:
-
-{
-  "content_json": {
-    "sections": [
-      {
-        "id": "section-1",
-        "title": "Introduction to the topic",
-        "content_markdown": "${wordRange} words — introduce the concept clearly for a ${p.level}-level learner",
-        "type": "concept"
-      },
-      {
-        "id": "section-2",
-        "title": "How It Works",
-        "content_markdown": "${wordRange} words — worked examples, code snippets, or concrete breakdown",
-        "type": "example"
-      },
-      {
-        "id": "section-3",
-        "title": "Going Deeper",
-        "content_markdown": "${wordRange} words — nuances, edge cases, or advanced aspects relevant to this lesson",
-        "type": "deep-dive"
-      }${sectionCount === 4 ? `,
-      {
-        "id": "section-4",
-        "title": "Real-World Application",
-        "content_markdown": "${wordRange} words — how this is used in real projects or professional contexts",
-        "type": "practice"
-      }` : ""}
-    ],
-    "knowledge_checks": [
-      {
-        "after_section": "section-2",
-        "question": "A specific question testing understanding of what was just taught",
-        "options": ["Correct answer", "Plausible wrong answer", "Another wrong answer", "Another wrong answer"],
-        "correct_index": 0,
-        "explanation": "Clear explanation of why the first option is correct"
-      },
-      {
-        "after_section": "section-${sectionCount}",
-        "question": "A question testing the deeper concept from the final section",
-        "options": ["Correct answer", "Plausible wrong answer", "Another wrong answer", "Another wrong answer"],
-        "correct_index": 0,
-        "explanation": "Clear explanation of why the first option is correct"
-      }
-    ],
-    "key_takeaways": [
-      "First concise, actionable takeaway from this lesson",
-      "Second key insight the learner should remember",
-      "Third practical point they can apply immediately"${sectionCount === 4 ? `,
-      "Fourth takeaway covering the real-world application aspect"` : ""}
-    ]${p.includePractice ? `,
-    "practice_challenge": {
-      "title": "Hands-on challenge title",
-      "description": "A concrete exercise the learner can do right now to apply what they just learned. Be specific.",
-      "hints": ["First hint to guide them", "Second hint if they get stuck"],
-      "solution_markdown": "Step-by-step solution with explanation of key decisions"
-    }` : ""}
-  },
-  "content_markdown": "All sections concatenated into a single markdown string (this is the fallback renderer). Include all content from every section above.",
-  "resources_json": [
-    {"type": "article", "title": "Relevant resource title", "url": "https://real-url.com"},
-    {"type": "video", "title": "Relevant video title", "url": "https://youtube.com/watch?v=..."},
-    {"type": "article", "title": "Official docs or reference", "url": "https://real-docs-url.com"}
-  ]
-}
-
-Rules:
-- content_json.sections must have EXACTLY ${sectionCount} sections
-- Each section: ${wordRange} words, ${p.level}-appropriate, directly about "${p.lessonTitle}"
-- knowledge_checks: exactly 2, placed after section-2 and section-${sectionCount} respectively
-- correct_index MUST be 0 in the JSON example but use 0, 1, 2, or 3 for the real answers — randomise the correct position
-- key_takeaways: ${sectionCount === 4 ? "4" : "3"} items, concise and actionable
-- resources_json: 2-3 real URLs from MDN, official docs, YouTube, freeCodeCamp, Khan Academy, etc.
-- content_markdown: full concatenation of all sections (not a summary)
-- Do NOT repeat content already covered in: ${p.previousLessonTitles.length > 0 ? p.previousLessonTitles.join(", ") : "N/A"}`;
+}`;
 }

@@ -30,7 +30,7 @@ export default async function DashboardPage() {
         modules (
           id,
           order_index,
-          lessons ( id, order_index )
+          lessons ( id, order_index, title )
         )
       `)
       .eq("user_id", user.id)

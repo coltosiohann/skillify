@@ -32,7 +32,16 @@ import LessonNotes from "@/components/lesson/LessonNotes";
 interface Resource {
   type: string;
   title: string;
-  url: string;
+  // Old format: direct URL. New format: search_query resolved to a Google search.
+  url?: string;
+  search_query?: string;
+}
+
+/** Returns a usable href for any resource format */
+function resolveResourceHref(r: Resource): string {
+  if (r.url) return r.url;
+  if (r.search_query) return `https://www.google.com/search?q=${encodeURIComponent(r.search_query)}`;
+  return "#";
 }
 
 interface Lesson {
@@ -496,7 +505,7 @@ export default function LessonView({
             {resources.map((r, i) => (
               <a
                 key={i}
-                href={r.url}
+                href={resolveResourceHref(r)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 p-3.5 rounded-xl border border-primary/10 hover:border-primary/30 hover:bg-primary/3 transition-all group cursor-pointer"

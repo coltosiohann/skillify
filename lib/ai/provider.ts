@@ -25,6 +25,7 @@ function hasOpenAIKey() {
 
 export interface GenerateOptions {
   maxTokens?: number;
+  temperature?: number;
 }
 
 export async function generateText(
@@ -34,11 +35,14 @@ export async function generateText(
 ): Promise<string> {
   const maxTokens = options?.maxTokens ?? 16384;
 
+  const temperature = options?.temperature;
+
   if (hasAnthropicKey()) {
     const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const msg = await claude.messages.create({
       model: ANTHROPIC_MODEL,
       max_tokens: maxTokens,
+      ...(temperature !== undefined && { temperature }),
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
     });
@@ -54,6 +58,7 @@ export async function generateText(
         { role: "user", content: userPrompt },
       ],
       max_tokens: maxTokens,
+      ...(temperature !== undefined && { temperature }),
     });
     return res.choices[0].message.content ?? "";
   }

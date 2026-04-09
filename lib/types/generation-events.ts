@@ -8,6 +8,7 @@ export interface OutlineLessonStub {
   xp_reward: number;
   estimated_minutes: number;
   difficulty: "easy" | "standard" | "challenging";
+  learning_objective: string;
 }
 
 export interface OutlineModule {
@@ -21,6 +22,7 @@ export interface OutlineModule {
 export interface CourseOutline {
   title: string;
   description: string;
+  learning_outcomes: string[];
   modules: OutlineModule[];
 }
 
