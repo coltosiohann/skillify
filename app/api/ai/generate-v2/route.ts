@@ -219,6 +219,7 @@ export async function POST(req: NextRequest) {
                   courseLearningOutcomes,
                   allModuleTitles,
                   learningObjective: stub.learning_objective ?? `By the end of this lesson you can work with ${stub.title}`,
+                  courseMode: outline.course_mode ?? "learning",
                 }),
                 2,
                 8192,

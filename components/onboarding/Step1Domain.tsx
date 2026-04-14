@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Search } from "lucide-react";
+import { ArrowRight, Search, BookOpen, Zap, Wrench, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { WizardData } from "@/app/(app)/onboarding/page";
+import type { GoalType } from "@/lib/prompts/course-generator";
 
 const CATEGORIES = [
   { label: "Tech", emoji: "💻" },
@@ -20,6 +21,48 @@ const CATEGORIES = [
   { label: "Academics", emoji: "📚" },
 ];
 
+const GOAL_OPTIONS: {
+  value: GoalType;
+  label: string;
+  sub: string;
+  icon: React.ElementType;
+  color: string;
+  activeColor: string;
+}[] = [
+  {
+    value: "auto",
+    label: "Let AI decide",
+    sub: "Best choice for your goal",
+    icon: Layers,
+    color: "text-primary/60",
+    activeColor: "text-primary",
+  },
+  {
+    value: "learning",
+    label: "Learn & Understand",
+    sub: "Concepts, theory, deep dives",
+    icon: BookOpen,
+    color: "text-blue-500/60",
+    activeColor: "text-blue-500",
+  },
+  {
+    value: "execution",
+    label: "Step-by-step Plan",
+    sub: "Routines, habits, results",
+    icon: Zap,
+    color: "text-amber-500/60",
+    activeColor: "text-amber-500",
+  },
+  {
+    value: "tool-based",
+    label: "Tools & Workflows",
+    sub: "Software, AI, automation",
+    icon: Wrench,
+    color: "text-emerald-500/60",
+    activeColor: "text-emerald-500",
+  },
+];
+
 interface Props {
   data: WizardData;
   onNext: (patch: Partial<WizardData>) => void;
@@ -28,15 +71,16 @@ interface Props {
 export default function Step1Domain({ data, onNext }: Props) {
   const [domain, setDomain] = useState(data.domain);
   const [category, setCategory] = useState(data.category);
+  const [goalType, setGoalType] = useState<GoalType>(data.goalType ?? "auto");
 
-  function handleChip(label: string, emoji: string) {
+  function handleChip(label: string) {
     setCategory(label);
     if (!domain) setDomain(label);
   }
 
   function handleSubmit() {
     if (!domain.trim()) return;
-    onNext({ domain: domain.trim(), category });
+    onNext({ domain: domain.trim(), category, goalType });
   }
 
   return (
@@ -103,7 +147,7 @@ export default function Step1Domain({ data, onNext }: Props) {
             <button
               key={cat.label}
               type="button"
-              onClick={() => handleChip(cat.label, cat.emoji)}
+              onClick={() => handleChip(cat.label)}
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium transition-all duration-200 cursor-pointer border ${
                 category === cat.label
                   ? "bg-primary text-white border-primary shadow-md shadow-primary/25"
@@ -114,6 +158,43 @@ export default function Step1Domain({ data, onNext }: Props) {
               {cat.label}
             </button>
           ))}
+        </div>
+
+        {/* Goal type picker */}
+        <div className="mb-8">
+          <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">
+            What kind of course do you want?
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {GOAL_OPTIONS.map((opt) => {
+              const Icon = opt.icon;
+              const isActive = goalType === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setGoalType(opt.value)}
+                  className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
+                    isActive
+                      ? "border-primary/40 bg-primary/8 shadow-sm shadow-primary/10"
+                      : "border-primary/10 bg-card hover:border-primary/25 hover:bg-primary/4"
+                  }`}
+                >
+                  <span className={`mt-0.5 flex-shrink-0 transition-colors ${isActive ? opt.activeColor : opt.color}`}>
+                    <Icon className="w-4 h-4" />
+                  </span>
+                  <span>
+                    <span className={`block text-xs font-semibold transition-colors ${isActive ? "text-foreground" : "text-foreground/70"}`}>
+                      {opt.label}
+                    </span>
+                    <span className="block text-xs text-muted-foreground leading-tight mt-0.5">
+                      {opt.sub}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <Button

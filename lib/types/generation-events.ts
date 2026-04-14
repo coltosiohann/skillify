@@ -19,9 +19,13 @@ export interface OutlineModule {
   lessons: OutlineLessonStub[];
 }
 
+export type CourseMode = "learning" | "execution" | "tool-based" | "hybrid";
+
 export interface CourseOutline {
   title: string;
   description: string;
+  course_mode: CourseMode;
+  goal_summary: string;
   learning_outcomes: string[];
   modules: OutlineModule[];
 }

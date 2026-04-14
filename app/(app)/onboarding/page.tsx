@@ -6,11 +6,18 @@ import { useRouter } from "next/navigation";
 import Step1Domain from "@/components/onboarding/Step1Domain";
 import Step2Upload from "@/components/onboarding/Step2Upload";
 import Step3Assessment from "@/components/onboarding/Step3Assessment";
+import Step3Smart from "@/components/onboarding/Step3Smart";
 import Step4Schedule from "@/components/onboarding/Step4Schedule";
+import type { GoalType } from "@/lib/prompts/course-generator";
 
 export interface WizardData {
   domain: string;
   category: string;
+  goalType: GoalType;
+  // Smart context fields (from Step3Smart)
+  timeframe?: string;
+  useCases?: string[];
+  constraints?: string[];
   documentId: string | null;
   extractedText: string | null;
   detectedLevel: "beginner" | "intermediate" | "advanced";
@@ -22,6 +29,10 @@ export interface WizardData {
 const DEFAULT: WizardData = {
   domain: "",
   category: "",
+  goalType: "auto",
+  timeframe: undefined,
+  useCases: undefined,
+  constraints: undefined,
   documentId: null,
   extractedText: null,
   detectedLevel: "beginner",
@@ -77,8 +88,11 @@ export default function OnboardingPage() {
         {step === 2 && (
           <Step2Upload key="step2" data={data} onNext={next} onBack={back} />
         )}
-        {step === 3 && (
-          <Step3Assessment key="step3" data={data} onNext={next} onBack={back} />
+        {step === 3 && data.goalType === "learning" && (
+          <Step3Assessment key="step3-assess" data={data} onNext={next} onBack={back} />
+        )}
+        {step === 3 && data.goalType !== "learning" && (
+          <Step3Smart key="step3-smart" data={data} onNext={next} onBack={back} />
         )}
         {step === 4 && (
           <Step4Schedule key="step4" data={data} onNext={next} onBack={back} />

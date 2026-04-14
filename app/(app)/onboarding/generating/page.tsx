@@ -114,6 +114,10 @@ export default function GeneratingPage() {
           minutesPerDay: wizard.minutesPerDay,
           learningStyle: wizard.learningStyle,
           pdfContext: wizard.extractedText ?? undefined,
+          goalType:    wizard.goalType    ?? "auto",
+          timeframe:   wizard.timeframe   ?? undefined,
+          useCases:    wizard.useCases    ?? undefined,
+          constraints: wizard.constraints ?? undefined,
         }),
       });
 
