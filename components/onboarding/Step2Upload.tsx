@@ -97,7 +97,7 @@ export default function Step2Upload({ data, onNext, onBack }: Props) {
         </p>
       </div>
 
-      <div className="glass-card rounded-3xl p-8 shadow-xl shadow-primary/10">
+      <div className="glass-card rounded-3xl p-5 sm:p-8 shadow-xl shadow-primary/10">
         {uploadState !== "done" ? (
           <div
             onDrop={onDrop}
@@ -165,27 +165,31 @@ export default function Step2Upload({ data, onNext, onBack }: Props) {
           </div>
         )}
 
-        <div className="flex gap-3 mt-6">
+        <div className="mt-6 space-y-2">
+          {/* Skip + Continue — always share full width */}
+          <div className="flex gap-2">
+            <Button
+              onClick={handleSkip}
+              variant="outline"
+              className="rounded-xl border-primary/15 hover:bg-primary/5 cursor-pointer flex-1"
+            >
+              Skip this step
+            </Button>
+            <Button
+              onClick={handleContinue}
+              disabled={uploadState === "uploading" || uploadState === "error"}
+              className="gap-2 rounded-xl bg-primary text-white hover:bg-[#6d28d9] shadow-md shadow-primary/25 cursor-pointer flex-1 disabled:opacity-50"
+            >
+              Continue <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+          {/* Back — full width below on mobile, keeps it from squeezing Continue */}
           <Button
             variant="outline"
             onClick={onBack}
-            className="gap-2 rounded-xl border-primary/15 hover:bg-primary/5 cursor-pointer"
+            className="w-full gap-2 rounded-xl border-primary/15 hover:bg-primary/5 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" /> Back
-          </Button>
-          <Button
-            onClick={handleSkip}
-            variant="outline"
-            className="rounded-xl border-primary/15 hover:bg-primary/5 cursor-pointer flex-1"
-          >
-            Skip this step
-          </Button>
-          <Button
-            onClick={handleContinue}
-            disabled={uploadState === "uploading" || uploadState === "error"}
-            className="gap-2 rounded-xl bg-primary text-white hover:bg-[#6d28d9] shadow-md shadow-primary/25 cursor-pointer flex-1 disabled:opacity-50"
-          >
-            Continue <ArrowRight className="w-4 h-4" />
           </Button>
         </div>
       </div>

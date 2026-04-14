@@ -1,16 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Clock, Target, Wrench, Wallet, ChevronDown } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowLeft, ArrowRight, Target, Wrench, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { WizardData } from "@/app/(app)/onboarding/page";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
-
-const TIMEFRAMES = [
-  "1 week", "2 weeks", "4 weeks", "6 weeks", "2 months", "3 months", "6 months",
-];
 
 const EXECUTION_CONSTRAINTS = [
   "No equipment needed",
@@ -103,14 +99,11 @@ export default function Step3Smart({ data, onNext, onBack }: Props) {
   const [level, setLevel] = useState<"beginner" | "intermediate" | "advanced">(
     data.detectedLevel ?? "beginner"
   );
-  const [timeframe, setTimeframe]   = useState<string>(data.timeframe ?? "");
   const [useCases, setUseCases]     = useState<string[]>(data.useCases ?? []);
   const [constraints, setConstraints] = useState<string[]>(data.constraints ?? []);
   const [toolBudget, setToolBudget] = useState<string>(
-    // pull budget back out of constraints if it was saved before
     data.constraints?.find((c) => TOOL_BUDGETS.map((b) => b.value).includes(c)) ?? ""
   );
-  const [showMoreTimeframes, setShowMoreTimeframes] = useState(false);
 
   function toggleItem(arr: string[], set: (v: string[]) => void, val: string) {
     set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
@@ -123,13 +116,10 @@ export default function Step3Smart({ data, onNext, onBack }: Props) {
     ];
     onNext({
       detectedLevel: level,
-      timeframe:    timeframe || undefined,
-      useCases:     useCases.length   > 0 ? useCases     : undefined,
-      constraints:  allConstraints.length > 0 ? allConstraints : undefined,
+      useCases:    useCases.length     > 0 ? useCases     : undefined,
+      constraints: allConstraints.length > 0 ? allConstraints : undefined,
     });
   }
-
-  const visibleTimeframes = showMoreTimeframes ? TIMEFRAMES : TIMEFRAMES.slice(0, 5);
 
   const isExecution = goalType === "execution";
   const isToolBased = goalType === "tool-based";
@@ -188,41 +178,6 @@ export default function Step3Smart({ data, onNext, onBack }: Props) {
             ))}
           </div>
         </div>
-
-        {/* ── Timeframe (execution + hybrid + auto) ──────────────────────── */}
-        {(isExecution || isHybrid || goalType === "auto") && (
-          <div>
-            <SectionLabel icon={Clock} label="Timeframe" />
-            <div className="flex flex-wrap gap-2">
-              <AnimatePresence initial={false}>
-                {visibleTimeframes.map((t) => (
-                  <motion.div
-                    key={t}
-                    initial={{ opacity: 0, scale: 0.85 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.85 }}
-                    transition={{ duration: 0.15 }}
-                  >
-                    <Chip
-                      label={t}
-                      active={timeframe === t}
-                      onClick={() => setTimeframe(timeframe === t ? "" : t)}
-                    />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-              {!showMoreTimeframes && (
-                <button
-                  type="button"
-                  onClick={() => setShowMoreTimeframes(true)}
-                  className="flex items-center gap-1 px-3.5 py-2 rounded-full text-sm font-medium border border-dashed border-primary/20 text-muted-foreground hover:border-primary/40 hover:text-foreground transition-all cursor-pointer"
-                >
-                  More <ChevronDown className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* ── Constraints (execution) ─────────────────────────────────────── */}
         {isExecution && (

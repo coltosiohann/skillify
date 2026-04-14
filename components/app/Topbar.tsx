@@ -233,7 +233,7 @@ export default function Topbar() {
       )}
     </AnimatePresence>
 
-    <header className="h-16 border-b border-primary/8 bg-card flex items-center px-4 md:px-6 gap-4 sticky top-0 z-20">
+    <header className="h-16 border-b border-primary/8 bg-card flex items-center px-4 md:px-6 gap-4 z-20 flex-shrink-0">
       {/* Hamburger — mobile only */}
       <button
         onClick={() => setMobileOpen(true)}
@@ -286,7 +286,7 @@ export default function Topbar() {
           <div className="hidden sm:flex items-center gap-3">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/8 text-primary">
               <span className="text-xs font-bold">⚡</span>
-              <span className="text-xs font-bold">{profile.total_xp.toLocaleString()} XP</span>
+              <span className="text-xs font-bold">{profile.total_xp.toLocaleString("en-US")} XP</span>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-600">
               <span className="text-xs">🔥</span>

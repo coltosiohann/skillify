@@ -21,7 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <SidebarProvider>
       <ServiceWorkerRegistrar />
-      <div className="flex h-screen overflow-hidden bg-background">
+      <div className="flex h-[100dvh] overflow-hidden bg-background">
         <Sidebar />
         <div className="flex flex-col flex-1 overflow-hidden min-w-0">
           <Topbar />

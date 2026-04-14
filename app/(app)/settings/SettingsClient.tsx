@@ -50,23 +50,38 @@ const TABS = [
 
 type Tab = typeof TABS[number]["id"];
 
-// Toggle component
+// Toggle component — fully inline-styled to avoid Tailwind JIT positioning issues
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative w-10 h-5.5 rounded-full transition-colors cursor-pointer flex-shrink-0 ${
-        checked ? "bg-primary" : "bg-gray-200"
-      }`}
-      style={{ width: 40, height: 22 }}
+      className={`cursor-pointer flex-shrink-0 ${checked ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"}`}
+      style={{
+        position: "relative",
+        width: 44,
+        height: 24,
+        minWidth: 44,
+        borderRadius: 99,
+        border: "none",
+        outline: "none",
+        transition: "background-color 0.2s",
+        padding: 0,
+      }}
     >
       <span
-        className={`absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white shadow transition-transform ${
-          checked ? "translate-x-[19px]" : "translate-x-0.5"
-        }`}
-        style={{ width: 18, height: 18, left: 2, top: 2 }}
+        style={{
+          position: "absolute",
+          top: 3,
+          left: checked ? 23 : 3,
+          width: 18,
+          height: 18,
+          borderRadius: "50%",
+          background: "white",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.25)",
+          transition: "left 0.2s",
+        }}
       />
     </button>
   );
@@ -165,27 +180,30 @@ export default function SettingsClient({ profile, email, userId }: Props) {
       </motion.div>
 
       <div className="flex flex-col sm:flex-row gap-6">
-        {/* Sidebar tabs */}
+        {/* Tab nav — 2×2 grid on mobile, vertical sidebar on sm+ */}
         <motion.nav
           initial={{ opacity: 0, x: -12 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.05 }}
-          className="sm:w-48 flex sm:flex-col gap-1 flex-shrink-0"
+          className="flex-shrink-0 sm:w-48"
         >
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer text-left ${
-                activeTab === tab.id
-                  ? "bg-primary text-white shadow-md shadow-primary/25"
-                  : "text-muted-foreground hover:bg-primary/8 hover:text-foreground"
-              }`}
-            >
-              <tab.icon className="w-4 h-4 flex-shrink-0" />
-              {tab.label}
-            </button>
-          ))}
+          {/* Mobile: 2×2 grid so all tabs are visible at once */}
+          <div className="grid grid-cols-2 sm:grid-cols-1 gap-1.5 sm:gap-1">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer text-left w-full ${
+                  activeTab === tab.id
+                    ? "bg-primary text-white shadow-md shadow-primary/25"
+                    : "text-muted-foreground hover:bg-primary/8 hover:text-foreground"
+                }`}
+              >
+                <tab.icon className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">{tab.label}</span>
+              </button>
+            ))}
+          </div>
         </motion.nav>
 
         {/* Content */}
@@ -259,7 +277,7 @@ export default function SettingsClient({ profile, email, userId }: Props) {
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-3 pt-2">
                   {[
-                    { label: "Total XP", value: (profile?.total_xp ?? 0).toLocaleString() },
+                    { label: "Total XP", value: (profile?.total_xp ?? 0).toLocaleString("en-US") },
                     { label: "Day Streak", value: `${profile?.current_streak ?? 0}d` },
                     { label: "Courses this month", value: profile?.courses_generated_this_month ?? 0 },
                   ].map((s, i) => (
@@ -465,27 +483,25 @@ export default function SettingsClient({ profile, email, userId }: Props) {
                 {/* Plan comparison */}
                 <div className="glass-card rounded-3xl p-6 border border-primary/10">
                   <h3 className="font-heading font-bold text-foreground mb-4">Plan Features</h3>
-                  <div className="space-y-3">
+                  {/* Header row */}
+                  <div className="grid grid-cols-4 gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide pb-2 border-b border-primary/8 mb-1">
+                    <span className="col-span-2">Feature</span>
+                    <span className="text-center">Free</span>
+                    <span className="text-center">Pro</span>
+                  </div>
+                  <div className="space-y-0">
                     {[
-                      { feature: "AI Course Generation", free: "2/month", pro: "Unlimited", team: "Unlimited" },
-                      { feature: "PDF Upload", free: "—", pro: "✓", team: "✓" },
-                      { feature: "Full Quiz System", free: "Basic", pro: "Full", team: "Full" },
-                      { feature: "Export Courses", free: "—", pro: "✓", team: "✓" },
-                      { feature: "Team Members", free: "1", pro: "1", team: "5" },
-                    ].map((row, i) => (
-                      <div key={i} className={`grid grid-cols-4 gap-2 text-sm py-2.5 ${i < 4 ? "border-b border-primary/6" : ""}`}>
-                        <span className="text-muted-foreground col-span-1">{row.feature}</span>
-                        <span className={`text-center font-medium ${profile?.plan === "free" ? "text-primary" : "text-foreground"}`}>{row.free}</span>
+                      { feature: "Course Generation", free: "2/mo", pro: "Unlimited" },
+                      { feature: "PDF Upload",        free: "—",     pro: "✓" },
+                      { feature: "Quiz System",       free: "Basic", pro: "Full" },
+                      { feature: "Export Courses",    free: "—",     pro: "✓" },
+                    ].map((row, i, arr) => (
+                      <div key={i} className={`grid grid-cols-4 gap-2 text-sm py-2.5 ${i < arr.length - 1 ? "border-b border-primary/6" : ""}`}>
+                        <span className="text-muted-foreground col-span-2 truncate">{row.feature}</span>
+                        <span className={`text-center font-medium ${profile?.plan === "free" ? "text-primary" : "text-foreground/60"}`}>{row.free}</span>
                         <span className={`text-center font-medium ${profile?.plan === "pro" ? "text-primary" : "text-foreground"}`}>{row.pro}</span>
-                        <span className={`text-center font-medium ${profile?.plan === "team" ? "text-primary" : "text-foreground"}`}>{row.team}</span>
                       </div>
                     ))}
-                    <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground pt-1">
-                      <span />
-                      <span className="text-center font-medium">Free</span>
-                      <span className="text-center font-medium">Pro</span>
-                      <span className="text-center font-medium">Team</span>
-                    </div>
                   </div>
                 </div>
 

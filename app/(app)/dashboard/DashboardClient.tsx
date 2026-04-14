@@ -316,7 +316,7 @@ function TodayGoalCard({ vm }: { vm: DashboardVM }) {
           <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
             <span>Weekly progress</span>
             <span className={`font-semibold ${goalDone ? "text-emerald-600" : "text-primary"}`}>
-              {weeklyXp.toLocaleString()} / {weeklyGoal.toLocaleString()} XP
+              {weeklyXp.toLocaleString("en-US")} / {weeklyGoal.toLocaleString("en-US")} XP
             </span>
           </div>
           <div className="h-1.5 bg-primary/10 rounded-full overflow-hidden">
@@ -379,10 +379,10 @@ function ProgressCard({ vm }: { vm: DashboardVM }) {
         <div className="mb-3">
           <div className="flex items-baseline gap-1.5 mb-2">
             <span className="font-heading text-3xl font-extrabold text-primary">
-              {xpInLevel.toLocaleString()}
+              {xpInLevel.toLocaleString("en-US")}
             </span>
             <span className="text-base font-semibold text-muted-foreground">
-              / {xpNeeded > 0 ? xpNeeded.toLocaleString() : "∞"} XP
+              / {xpNeeded > 0 ? xpNeeded.toLocaleString("en-US") : "∞"} XP
             </span>
           </div>
           {/* Level bar */}
@@ -409,7 +409,7 @@ function ProgressCard({ vm }: { vm: DashboardVM }) {
           </div>
           <div className="ml-auto">
             <span className="text-xs font-bold text-primary">
-              {xp.toLocaleString()} total XP
+              {xp.toLocaleString("en-US")} total XP
             </span>
           </div>
         </div>

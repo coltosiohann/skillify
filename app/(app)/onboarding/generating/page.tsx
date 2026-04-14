@@ -78,6 +78,21 @@ export default function GeneratingPage() {
     generate();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Warn before leaving while generation is in progress ──────────────────
+  useEffect(() => {
+    const isActive = phase !== "done" && phase !== "error";
+    if (!isActive) return;
+
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      // Modern browsers show their own generic message — we can't customise it
+      e.returnValue = "";
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [phase]);
+
   // ── Progress bar calculation ──────────────────────────────────────────────
 
   useEffect(() => {
@@ -115,7 +130,9 @@ export default function GeneratingPage() {
           learningStyle: wizard.learningStyle,
           pdfContext: wizard.extractedText ?? undefined,
           goalType:    wizard.goalType    ?? "auto",
-          timeframe:   wizard.timeframe   ?? undefined,
+          // Derive timeframe from durationWeeks so the AI always has it,
+          // even if the user didn't explicitly pick one in Step 3
+          timeframe:   wizard.timeframe   ?? `${wizard.durationWeeks} weeks`,
           useCases:    wizard.useCases    ?? undefined,
           constraints: wizard.constraints ?? undefined,
         }),

@@ -36,9 +36,14 @@ interface Props {
 }
 
 export default function Step4Schedule({ data, onNext, onBack }: Props) {
+  const isExecution = data.goalType === "execution";
+
   const [durationWeeks, setDurationWeeks] = useState(data.durationWeeks);
   const [minutesPerDay, setMinutesPerDay] = useState(data.minutesPerDay);
-  const [learningStyle, setLearningStyle] = useState(data.learningStyle);
+  // Execution goals don't need a learning-style picker — default to practical
+  const [learningStyle, setLearningStyle] = useState(
+    isExecution ? "practical" as const : data.learningStyle
+  );
 
   function handleGenerate() {
     onNext({ durationWeeks, minutesPerDay, learningStyle });
@@ -116,31 +121,33 @@ export default function Step4Schedule({ data, onNext, onBack }: Props) {
           </div>
         </div>
 
-        {/* Learning style */}
-        <div>
-          <label className="font-semibold text-foreground text-sm block mb-3">Learning style</label>
-          <div className="grid grid-cols-3 gap-2.5">
-            {STYLE_OPTIONS.map((opt) => {
-              const Icon = opt.icon;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setLearningStyle(opt.value)}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all duration-150 cursor-pointer text-center ${
-                    learningStyle === opt.value
-                      ? "bg-primary/10 border-primary text-primary"
-                      : "bg-card border-primary/15 text-foreground hover:border-primary/30 hover:bg-primary/5"
-                  }`}
-                >
-                  <Icon className={`w-5 h-5 ${learningStyle === opt.value ? "text-primary" : "text-muted-foreground"}`} />
-                  <span className="font-semibold text-xs leading-tight">{opt.label}</span>
-                  <span className="text-xs text-muted-foreground leading-tight">{opt.desc}</span>
-                </button>
-              );
-            })}
+        {/* Learning style — hidden for execution goals (irrelevant) */}
+        {!isExecution && (
+          <div>
+            <label className="font-semibold text-foreground text-sm block mb-3">Learning style</label>
+            <div className="grid grid-cols-3 gap-2.5">
+              {STYLE_OPTIONS.map((opt) => {
+                const Icon = opt.icon;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setLearningStyle(opt.value)}
+                    className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all duration-150 cursor-pointer text-center ${
+                      learningStyle === opt.value
+                        ? "bg-primary/10 border-primary text-primary"
+                        : "bg-card border-primary/15 text-foreground hover:border-primary/30 hover:bg-primary/5"
+                    }`}
+                  >
+                    <Icon className={`w-5 h-5 ${learningStyle === opt.value ? "text-primary" : "text-muted-foreground"}`} />
+                    <span className="font-semibold text-xs leading-tight">{opt.label}</span>
+                    <span className="text-xs text-muted-foreground leading-tight">{opt.desc}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Summary */}
         <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 text-center">
