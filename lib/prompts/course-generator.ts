@@ -320,8 +320,18 @@ Write exactly 2 multiple-choice questions:
     }` : ""}
   },
   "content_markdown": string,     // all sections concatenated (fallback renderer)
-  "resources_json": [             // 2–3 items — NO URLs, Skillify resolves them
-    { "type": "article" | "video" | "docs" | "tool", "title": string, "search_query": string }
+  "resources_json": [             // 2–3 items — provide REAL, working URLs
+    {
+      "type": "article" | "video" | "docs" | "tool",
+      "title": string,
+      "url": string    // Rules by type:
+                       // "video"   → https://www.youtube.com/results?search_query=ENCODED_SPECIFIC_QUERY
+                       //             (e.g. "react+hooks+tutorial+for+beginners")
+                       // "article" → real URL: prefer official docs (developer.mozilla.org, react.dev,
+                       //             docs.python.org, docs.swift.org, etc.) or well-known resources
+                       // "docs"    → official documentation URL for the library/framework/language
+                       // "tool"    → official website of the tool (e.g. https://prettier.io)
+    }
   ]
 }
 

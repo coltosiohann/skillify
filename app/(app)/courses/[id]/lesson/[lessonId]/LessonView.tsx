@@ -13,6 +13,10 @@ import {
   Target,
   Bookmark,
   WifiOff,
+  PlayCircle,
+  FileText,
+  Wrench,
+  GraduationCap,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -32,16 +36,33 @@ import LessonNotes from "@/components/lesson/LessonNotes";
 interface Resource {
   type: string;
   title: string;
-  // Old format: direct URL. New format: search_query resolved to a Google search.
-  url?: string;
-  search_query?: string;
+  url?: string;         // New format: real direct URL (video = YouTube search, docs = official URL, etc.)
+  search_query?: string; // Legacy format — resolved below
 }
 
-/** Returns a usable href for any resource format */
+/**
+ * Returns the best possible href for a resource.
+ * New courses have a real `url`. Legacy DB rows only have `search_query` —
+ * those get routed to the most appropriate platform instead of generic Google.
+ */
 function resolveResourceHref(r: Resource): string {
-  if (r.url) return r.url;
-  if (r.search_query) return `https://www.google.com/search?q=${encodeURIComponent(r.search_query)}`;
-  return "#";
+  // New format — real URL provided by AI
+  if (r.url && r.url !== "#") return r.url;
+
+  // Legacy fallback — route to the best platform per type
+  const q = r.search_query ?? r.title;
+  const enc = encodeURIComponent(q);
+  switch (r.type) {
+    case "video":
+      return `https://www.youtube.com/results?search_query=${enc}`;
+    case "docs":
+      return `https://www.google.com/search?q=${enc}+official+documentation`;
+    case "tool":
+      return `https://www.google.com/search?q=${enc}+official+site`;
+    case "article":
+    default:
+      return `https://www.google.com/search?q=${enc}`;
+  }
 }
 
 interface Lesson {
@@ -73,12 +94,40 @@ interface Props {
   allLessons: LessonNavItem[];
 }
 
-const resourceTypeColors: Record<string, string> = {
-  article: "bg-blue-50 text-blue-700 border-blue-200",
-  video: "bg-red-50 text-red-700 border-red-200",
-  course: "bg-violet-50 text-violet-700 border-violet-200",
-  docs: "bg-slate-50 text-slate-700 border-slate-200",
+const resourceTypeStyles: Record<string, { badge: string; icon: React.ReactNode; label: string }> = {
+  video:   { badge: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",     icon: <PlayCircle className="w-4 h-4 text-red-500" />,    label: "Video" },
+  article: { badge: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800",   icon: <FileText className="w-4 h-4 text-blue-500" />,     label: "Article" },
+  docs:    { badge: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700", icon: <BookOpen className="w-4 h-4 text-slate-500" />,    label: "Docs" },
+  tool:    { badge: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800", icon: <Wrench className="w-4 h-4 text-amber-500" />,    label: "Tool" },
+  course:  { badge: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-400 dark:border-violet-800", icon: <GraduationCap className="w-4 h-4 text-violet-500" />, label: "Course" },
 };
+
+/** Extract a friendly platform name from a URL for display hints */
+function getPlatformLabel(url: string): string | null {
+  try {
+    const host = new URL(url).hostname.replace("www.", "");
+    if (host.includes("youtube.com") || host.includes("youtu.be")) return "YouTube";
+    if (host.includes("developer.mozilla.org")) return "MDN";
+    if (host.includes("react.dev")) return "React Docs";
+    if (host.includes("docs.python.org")) return "Python Docs";
+    if (host.includes("docs.swift.org")) return "Swift Docs";
+    if (host.includes("developer.apple.com")) return "Apple Developer";
+    if (host.includes("docs.microsoft.com") || host.includes("learn.microsoft.com")) return "Microsoft Learn";
+    if (host.includes("github.com")) return "GitHub";
+    if (host.includes("medium.com")) return "Medium";
+    if (host.includes("dev.to")) return "DEV";
+    if (host.includes("stackoverflow.com")) return "Stack Overflow";
+    if (host.includes("npmjs.com")) return "npm";
+    if (host.includes("freecodecamp.org")) return "freeCodeCamp";
+    if (host.includes("w3schools.com")) return "W3Schools";
+    if (host.includes("google.com")) return null; // hide google search fallback label
+    // For anything else, capitalize the domain root
+    const root = host.split(".")[0];
+    return root.charAt(0).toUpperCase() + root.slice(1);
+  } catch {
+    return null;
+  }
+}
 
 const difficultyColors: Record<string, string> = {
   easy: "bg-emerald-100 text-emerald-700 border-emerald-200",
@@ -502,28 +551,47 @@ export default function LessonView({
             Further Reading
           </h3>
           <div className="space-y-2.5">
-            {resources.map((r, i) => (
-              <a
-                key={i}
-                href={resolveResourceHref(r)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 p-3.5 rounded-xl border border-primary/10 hover:border-primary/30 hover:bg-primary/3 transition-all group cursor-pointer"
-              >
-                <Badge
-                  className={`text-xs border capitalize flex-shrink-0 ${
-                    resourceTypeColors[r.type] ??
-                    "bg-gray-100 text-gray-700 border-gray-200"
-                  }`}
+            {resources.map((r, i) => {
+              const href = resolveResourceHref(r);
+              const style = resourceTypeStyles[r.type] ?? {
+                badge: "bg-gray-100 text-gray-700 border-gray-200",
+                icon: <ExternalLink className="w-4 h-4 text-gray-500" />,
+                label: r.type,
+              };
+              const platform = getPlatformLabel(href);
+              return (
+                <a
+                  key={i}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3.5 rounded-xl border border-primary/10 hover:border-primary/30 hover:bg-primary/3 transition-all group cursor-pointer"
                 >
-                  {r.type}
-                </Badge>
-                <span className="text-sm text-foreground group-hover:text-primary transition-colors flex-1 truncate">
-                  {r.title}
-                </span>
-                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
-              </a>
-            ))}
+                  {/* Type icon */}
+                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 group-hover:bg-primary/10 transition-colors">
+                    {style.icon}
+                  </div>
+
+                  {/* Title + platform */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors truncate">
+                      {r.title}
+                    </p>
+                    {platform && (
+                      <p className="text-xs text-muted-foreground mt-0.5">{platform}</p>
+                    )}
+                  </div>
+
+                  {/* Badge + arrow */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Badge className={`text-xs border capitalize hidden sm:inline-flex ${style.badge}`}>
+                      {style.label}
+                    </Badge>
+                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                </a>
+              );
+            })}
           </div>
         </motion.div>
       )}

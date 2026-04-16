@@ -67,7 +67,8 @@ export default function LessonNotes({ lessonId, userId, initialNote }: Props) {
             onChange={(e) => setNote(e.target.value)}
             placeholder="Write your notes for this lesson… (auto-saved)"
             rows={6}
-            className="w-full resize-y rounded-xl border border-primary/15 bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            className="w-full resize-y rounded-xl border border-primary/15 bg-background p-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            style={{ fontSize: "16px" }}
           />
           <div className="flex items-center justify-between mt-2">
             <p className="text-xs text-muted-foreground">Notes are auto-saved as you type</p>
