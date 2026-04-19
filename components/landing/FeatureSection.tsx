@@ -191,7 +191,7 @@ function SkillInputMockup() {
           Master Chess in 60 days
         </div>
       </div>
-      <button className="w-full py-3 rounded-xl bg-primary text-white font-semibold text-sm shadow-md shadow-primary/30 hover:bg-[#6d28d9] transition-colors cursor-pointer">
+      <button className="w-full py-3 rounded-xl bg-primary text-white font-semibold text-sm shadow-md shadow-primary/30 hover:bg-[#4338CA] transition-colors cursor-pointer">
         → Next Step
       </button>
       {/* Category chips */}

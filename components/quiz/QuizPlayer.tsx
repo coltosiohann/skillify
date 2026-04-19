@@ -228,7 +228,7 @@ export default function QuizPlayer({
         </div>
 
         <Link href={`/courses/${courseId}`} className="block mt-6">
-          <Button className="w-full h-11 rounded-xl bg-primary hover:bg-[#6d28d9] text-white font-semibold shadow-md shadow-primary/25 cursor-pointer">
+          <Button className="w-full h-11 rounded-xl bg-primary hover:bg-[#4338CA] text-white font-semibold shadow-md shadow-primary/25 cursor-pointer">
             Back to Course
           </Button>
         </Link>
@@ -301,7 +301,7 @@ export default function QuizPlayer({
         </button>
 
         <Link href={`/courses/${courseId}`}>
-          <Button className="w-full h-11 rounded-xl bg-primary hover:bg-[#6d28d9] text-white font-semibold shadow-md shadow-primary/25 cursor-pointer">
+          <Button className="w-full h-11 rounded-xl bg-primary hover:bg-[#4338CA] text-white font-semibold shadow-md shadow-primary/25 cursor-pointer">
             Back to Course
           </Button>
         </Link>
@@ -449,7 +449,7 @@ export default function QuizPlayer({
               <Button
                 onClick={handleReveal}
                 disabled={!selected}
-                className="flex-1 h-11 rounded-xl bg-primary hover:bg-[#6d28d9] text-white font-semibold shadow-md shadow-primary/25 disabled:opacity-50 cursor-pointer"
+                className="flex-1 h-11 rounded-xl bg-primary hover:bg-[#4338CA] text-white font-semibold shadow-md shadow-primary/25 disabled:opacity-50 cursor-pointer"
               >
                 Check Answer
               </Button>
@@ -457,7 +457,7 @@ export default function QuizPlayer({
               <Button
                 onClick={handleNext}
                 disabled={submitting}
-                className="flex-1 h-11 rounded-xl bg-primary hover:bg-[#6d28d9] text-white font-semibold shadow-md shadow-primary/25 gap-2 cursor-pointer"
+                className="flex-1 h-11 rounded-xl bg-primary hover:bg-[#4338CA] text-white font-semibold shadow-md shadow-primary/25 gap-2 cursor-pointer"
               >
                 {submitting ? (
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

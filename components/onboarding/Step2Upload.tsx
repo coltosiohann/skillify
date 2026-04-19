@@ -178,7 +178,7 @@ export default function Step2Upload({ data, onNext, onBack }: Props) {
             <Button
               onClick={handleContinue}
               disabled={uploadState === "uploading" || uploadState === "error"}
-              className="gap-2 rounded-xl bg-primary text-white hover:bg-[#6d28d9] shadow-md shadow-primary/25 cursor-pointer flex-1 disabled:opacity-50"
+              className="gap-2 rounded-xl bg-primary text-white hover:bg-[#4338CA] shadow-md shadow-primary/25 cursor-pointer flex-1 disabled:opacity-50"
             >
               Continue <ArrowRight className="w-4 h-4" />
             </Button>

@@ -70,7 +70,7 @@ export default function Sidebar() {
     <>
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 h-16 border-b border-sidebar-border overflow-hidden flex-shrink-0">
-        <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-md shadow-primary/30">
+        <div className="flex-shrink-0 w-9 h-9 rounded-2xl flex items-center justify-center shadow-md shadow-primary/30" style={{ background: "linear-gradient(135deg, #5B4CF5, #818CF8)" }}>
           <Zap className="w-4 h-4 text-white fill-white" />
         </div>
         <AnimatePresence>
@@ -104,9 +104,9 @@ export default function Sidebar() {
             <Link key={item.href} href={item.href} onClick={handleNavClick}>
               <div
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 cursor-pointer group",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-all duration-150 cursor-pointer group",
                   active
-                    ? "bg-primary text-white shadow-md shadow-primary/25"
+                    ? "nav-active"
                     : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 )}
               >

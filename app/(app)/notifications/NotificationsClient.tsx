@@ -197,7 +197,7 @@ export default function NotificationsClient({ progress, courses, totalXp, curren
           </p>
           <Link
             href="/onboarding"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-[#6d28d9] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-[#4338CA] transition-colors cursor-pointer"
           >
             <Zap className="w-4 h-4" /> Create a course
           </Link>

@@ -169,7 +169,7 @@ export default function Step4Schedule({ data, onNext, onBack }: Props) {
           </Button>
           <Button
             onClick={handleGenerate}
-            className="flex-1 h-12 rounded-xl bg-primary text-white hover:bg-[#6d28d9] shadow-md shadow-primary/25 transition-all duration-200 gap-2 cursor-pointer font-semibold"
+            className="flex-1 h-12 rounded-xl bg-primary text-white hover:bg-[#4338CA] shadow-md shadow-primary/25 transition-all duration-200 gap-2 cursor-pointer font-semibold"
           >
             <Zap className="w-4 h-4" />
             Generate My Course

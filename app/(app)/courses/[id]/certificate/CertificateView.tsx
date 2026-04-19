@@ -114,7 +114,7 @@ export default function CertificateView({ course, recipientName, totalXp, comple
           <Button
             size="sm"
             onClick={handlePrint}
-            className="rounded-xl bg-primary hover:bg-[#6d28d9] text-white shadow-md shadow-primary/25 gap-1.5 cursor-pointer"
+            className="rounded-xl bg-primary hover:bg-[#4338CA] text-white shadow-md shadow-primary/25 gap-1.5 cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
             Save / Print

@@ -190,7 +190,7 @@ export default function OnboardingTour() {
               )}
               <Button
                 onClick={next}
-                className="flex-1 rounded-2xl bg-primary hover:bg-[#6d28d9] text-white gap-2 cursor-pointer h-12 shadow-lg shadow-primary/25"
+                className="flex-1 rounded-2xl bg-primary hover:bg-[#4338CA] text-white gap-2 cursor-pointer h-12 shadow-lg shadow-primary/25"
               >
                 {isLast ? (
                   <><Sparkles className="w-4 h-4" /> Let&apos;s Go!</>
@@ -335,7 +335,7 @@ export default function OnboardingTour() {
             <Button
               size="sm"
               onClick={next}
-              className="flex-1 rounded-xl bg-primary hover:bg-[#6d28d9] text-white gap-1 cursor-pointer text-xs shadow-md shadow-primary/20"
+              className="flex-1 rounded-xl bg-primary hover:bg-[#4338CA] text-white gap-1 cursor-pointer text-xs shadow-md shadow-primary/20"
             >
               {isLast ? (
                 "Get Started!"

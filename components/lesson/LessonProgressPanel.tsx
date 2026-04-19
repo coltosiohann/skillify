@@ -98,7 +98,7 @@ export default function LessonProgressPanel({ lessons, currentLessonId, courseId
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-30 w-12 h-12 rounded-full bg-primary text-white shadow-lg shadow-primary/30 flex items-center justify-center cursor-pointer hover:bg-[#6d28d9] transition-colors"
+          className="fixed bottom-6 right-6 z-30 w-12 h-12 rounded-full bg-primary text-white shadow-lg shadow-primary/30 flex items-center justify-center cursor-pointer hover:bg-[#4338CA] transition-colors"
           aria-label="Show lesson progress"
         >
           <List className="w-5 h-5" />

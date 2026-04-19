@@ -167,7 +167,7 @@ function ContinueHeroCard({ vm }: { vm: DashboardVM }) {
   return (
     <motion.div {...fadeUp(0.06)}>
       <Link href={`/courses/${courseId}/lesson/${lessonId}`} onClick={() => trackEvent("hero_resume_click", { courseId })}>
-        <div className="relative bg-gradient-to-br from-[#5B21B6] via-[#7C3AED] to-[#6D28D9] rounded-3xl p-6 pb-7 shadow-2xl shadow-primary/30 overflow-hidden cursor-pointer group">
+        <div className="relative bg-gradient-to-br from-[#4338CA] via-[#5B4CF5] to-[#818CF8] rounded-3xl p-6 pb-7 shadow-2xl shadow-primary/30 overflow-hidden cursor-pointer group">
           {/* Background decoration */}
           <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-white/5 -translate-y-1/3 translate-x-1/4 pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-white/5 translate-y-1/2 -translate-x-1/4 pointer-events-none" />
@@ -222,7 +222,7 @@ function WelcomeHeroCard() {
   return (
     <motion.div {...fadeUp(0.06)}>
       <Link href="/onboarding" onClick={() => trackEvent("welcome_hero_cta_click")}>
-        <div className="relative bg-gradient-to-br from-[#5B21B6] via-[#7C3AED] to-[#6D28D9] rounded-3xl p-6 pb-7 shadow-2xl shadow-primary/30 overflow-hidden cursor-pointer">
+        <div className="relative bg-gradient-to-br from-[#4338CA] via-[#5B4CF5] to-[#818CF8] rounded-3xl p-6 pb-7 shadow-2xl shadow-primary/30 overflow-hidden cursor-pointer">
           <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-white/5 -translate-y-1/3 translate-x-1/4 pointer-events-none" />
           <div className="inline-flex items-center gap-1.5 bg-white/15 text-white/90 text-xs font-semibold px-3 py-1 rounded-full mb-4">
             <Sparkles className="w-3 h-3" />
@@ -303,7 +303,7 @@ function TodayGoalCard({ vm }: { vm: DashboardVM }) {
               +10 XP
             </div>
             {streak > 0 && (
-              <div className="flex items-center gap-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 text-xs font-bold px-2.5 py-1 rounded-full">
+              <div className="flex items-center gap-1 bg-rose-100 dark:bg-rose-900/30 text-rose-600 text-xs font-bold px-2.5 py-1 rounded-full">
                 <Flame className="w-3 h-3" />
                 +5 XP
               </div>
@@ -333,7 +333,7 @@ function TodayGoalCard({ vm }: { vm: DashboardVM }) {
         <div className="flex items-center gap-3">
           <Link href={href} className="flex-1" onClick={() => trackEvent("goal_start_now_click")}>
             <motion.div whileTap={{ scale: 0.97 }}>
-              <Button className="w-full rounded-full bg-primary hover:bg-[#6d28d9] text-white font-bold gap-2 cursor-pointer shadow-md shadow-primary/25 h-11">
+              <Button className="w-full rounded-full bg-primary hover:bg-[#4338CA] text-white font-bold gap-2 cursor-pointer shadow-md shadow-primary/25 h-11">
                 Start Now
                 <ArrowRight className="w-4 h-4" />
               </Button>
@@ -344,11 +344,11 @@ function TodayGoalCard({ vm }: { vm: DashboardVM }) {
             <motion.div
               animate={{ scale: [1, 1.1, 1] }}
               transition={{ repeat: Infinity, repeatDelay: 3, duration: 0.5 }}
-              className="flex flex-col items-center justify-center w-16 h-11 bg-orange-50 dark:bg-orange-900/20 rounded-2xl border border-orange-200 dark:border-orange-800 flex-shrink-0"
+              className="flex flex-col items-center justify-center w-16 h-11 bg-rose-50 dark:bg-rose-900/20 rounded-2xl border border-rose-200 dark:border-rose-800 flex-shrink-0"
             >
-              <Flame className="w-4 h-4 text-orange-500" />
-              <span className="text-[10px] font-bold text-orange-600 leading-tight">{streak} day</span>
-              <span className="text-[9px] text-orange-400 leading-tight">streak</span>
+              <Flame className="w-4 h-4 text-rose-500" />
+              <span className="text-[10px] font-bold text-rose-600 leading-tight">{streak} day</span>
+              <span className="text-[9px] text-rose-400 leading-tight">streak</span>
             </motion.div>
           )}
         </div>
@@ -399,7 +399,7 @@ function ProgressCard({ vm }: { vm: DashboardVM }) {
         {/* Stats strip */}
         <div className="flex items-center gap-4 pt-3 border-t border-primary/6">
           <div className="flex items-center gap-1.5">
-            <Flame className="w-4 h-4 text-orange-500" />
+            <Flame className="w-4 h-4 text-rose-500" />
             <span className="text-sm font-semibold text-foreground">{streak}-day streak</span>
           </div>
           <div className="w-px h-4 bg-border" />
@@ -585,7 +585,7 @@ function CreateCourseSection() {
       </Link>
       <div className="mt-3">
         <Link href="/onboarding">
-          <Button className="w-full rounded-full bg-primary hover:bg-[#6d28d9] text-white font-bold gap-2 cursor-pointer h-11 shadow-md shadow-primary/25">
+          <Button className="w-full rounded-full bg-primary hover:bg-[#4338CA] text-white font-bold gap-2 cursor-pointer h-11 shadow-md shadow-primary/25">
             Create Course
             <Sparkles className="w-4 h-4" />
           </Button>
@@ -610,7 +610,7 @@ function FreePlanBanner({ vm }: { vm: DashboardVM }) {
           <p className="text-xs text-muted-foreground mt-0.5">Upgrade to Pro for unlimited courses, PDF uploads, and more.</p>
         </div>
         <Link href="/settings?tab=billing">
-          <Button size="sm" className="rounded-full bg-primary text-white hover:bg-[#6d28d9] shadow-md shadow-primary/25 whitespace-nowrap cursor-pointer" onClick={() => trackEvent("upgrade_banner_click")}>
+          <Button size="sm" className="rounded-full bg-primary text-white hover:bg-[#4338CA] shadow-md shadow-primary/25 whitespace-nowrap cursor-pointer" onClick={() => trackEvent("upgrade_banner_click")}>
             Upgrade to Pro
           </Button>
         </Link>
@@ -651,7 +651,7 @@ export default function DashboardClient(props: {
               <motion.div
                 animate={{ scale: [1, 1.12, 1] }}
                 transition={{ repeat: Infinity, repeatDelay: 3, duration: 0.55 }}
-                className="flex items-center gap-1.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-3 py-1.5 rounded-full text-sm font-bold flex-shrink-0 shadow-sm"
+                className="flex items-center gap-1.5 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 px-3 py-1.5 rounded-full text-sm font-bold flex-shrink-0 shadow-sm"
               >
                 <Flame className="w-4 h-4" />
                 {streak}

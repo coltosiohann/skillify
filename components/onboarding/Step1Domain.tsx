@@ -200,7 +200,7 @@ export default function Step1Domain({ data, onNext }: Props) {
         <Button
           onClick={handleSubmit}
           disabled={!domain.trim()}
-          className="w-full h-12 rounded-xl bg-primary text-white hover:bg-[#6d28d9] shadow-md shadow-primary/25 transition-all duration-200 gap-2 cursor-pointer disabled:opacity-50"
+          className="w-full h-12 rounded-xl bg-primary text-white hover:bg-[#4338CA] shadow-md shadow-primary/25 transition-all duration-200 gap-2 cursor-pointer disabled:opacity-50"
         >
           Continue <ArrowRight className="w-4 h-4" />
         </Button>

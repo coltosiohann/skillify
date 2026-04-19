@@ -92,7 +92,7 @@ export default function QuizLoader({ courseId, moduleId, moduleTitle, courseTitl
         <h2 className="font-heading font-bold text-foreground mb-2">Quiz generation failed</h2>
         <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">{error}</p>
         <div className="flex gap-3 justify-center">
-          <Button onClick={load} className="rounded-xl bg-primary text-white hover:bg-[#6d28d9] gap-2 cursor-pointer">
+          <Button onClick={load} className="rounded-xl bg-primary text-white hover:bg-[#4338CA] gap-2 cursor-pointer">
             <RefreshCw className="w-4 h-4" /> Try Again
           </Button>
           <Link href={`/courses/${courseId}`}>
@@ -190,7 +190,7 @@ export default function QuizLoader({ courseId, moduleId, moduleTitle, courseTitl
             </Link>
             <Button
               onClick={() => setRetaking(true)}
-              className="flex-1 rounded-xl bg-primary hover:bg-[#6d28d9] text-white shadow-md shadow-primary/25 gap-2 cursor-pointer"
+              className="flex-1 rounded-xl bg-primary hover:bg-[#4338CA] text-white shadow-md shadow-primary/25 gap-2 cursor-pointer"
             >
               <RotateCcw className="w-4 h-4" /> Retake
             </Button>

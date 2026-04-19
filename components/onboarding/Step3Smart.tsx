@@ -278,7 +278,7 @@ export default function Step3Smart({ data, onNext, onBack }: Props) {
           </Button>
           <Button
             onClick={handleSubmit}
-            className="flex-1 h-12 rounded-xl bg-primary text-white hover:bg-[#6d28d9] shadow-md shadow-primary/25 gap-2 cursor-pointer"
+            className="flex-1 h-12 rounded-xl bg-primary text-white hover:bg-[#4338CA] shadow-md shadow-primary/25 gap-2 cursor-pointer"
           >
             Continue <ArrowRight className="w-4 h-4" />
           </Button>

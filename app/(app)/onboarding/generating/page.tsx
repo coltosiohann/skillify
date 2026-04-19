@@ -319,7 +319,7 @@ export default function GeneratingPage() {
       className="min-h-screen flex items-center justify-center p-6"
       style={{
         background:
-          "radial-gradient(ellipse 80% 60% at 50% 0%, #4c1d95, #6d28d9 30%, #7c3aed 60%, #1e1b4b)",
+          "radial-gradient(ellipse 80% 60% at 50% 0%, #4c1d95, #4338CA 30%, #7c3aed 60%, #1e1b4b)",
       }}
     >
       {/* Background sparkles */}

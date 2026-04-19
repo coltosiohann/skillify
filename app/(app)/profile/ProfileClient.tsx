@@ -176,7 +176,7 @@ export default function ProfileClient({ profile, email, courses, progress }: Pro
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingAvatar}
-                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center shadow cursor-pointer hover:bg-[#6d28d9] transition-colors disabled:opacity-60"
+                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center shadow cursor-pointer hover:bg-[#4338CA] transition-colors disabled:opacity-60"
                 aria-label="Change avatar"
               >
                 {uploadingAvatar
@@ -244,7 +244,7 @@ export default function ProfileClient({ profile, email, courses, progress }: Pro
               onClick={saveProfile}
               disabled={saving}
               className={`w-full h-10 rounded-xl font-semibold gap-2 cursor-pointer text-sm transition-all ${
-                saved ? "bg-emerald-500 hover:bg-emerald-600" : "bg-primary hover:bg-[#6d28d9]"
+                saved ? "bg-emerald-500 hover:bg-emerald-600" : "bg-primary hover:bg-[#4338CA]"
               } text-white`}
             >
               {saving

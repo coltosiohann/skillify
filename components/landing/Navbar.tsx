@@ -64,7 +64,7 @@ export default function Navbar() {
             </Button>
           </Link>
           <Link href="/signup">
-            <Button size="sm" className="rounded-full bg-primary hover:bg-[#6d28d9] text-white shadow-md shadow-primary/30 transition-all duration-200 hover:shadow-lg hover:shadow-primary/40 cursor-pointer">
+            <Button size="sm" className="rounded-full bg-primary hover:bg-[#4338CA] text-white shadow-md shadow-primary/30 transition-all duration-200 hover:shadow-lg hover:shadow-primary/40 cursor-pointer">
               Get Started Free
             </Button>
           </Link>

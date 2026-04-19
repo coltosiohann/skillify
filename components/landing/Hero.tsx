@@ -82,7 +82,7 @@ export default function Hero() {
             <Link href="/signup">
               <Button
                 size="lg"
-                className="rounded-full bg-primary hover:bg-[#6d28d9] text-white shadow-lg shadow-primary/30 transition-all duration-200 hover:shadow-xl hover:shadow-primary/40 active:scale-95 gap-2 cursor-pointer"
+                className="rounded-full bg-primary hover:bg-[#4338CA] text-white shadow-lg shadow-primary/30 transition-all duration-200 hover:shadow-xl hover:shadow-primary/40 active:scale-95 gap-2 cursor-pointer"
               >
                 Build My Roadmap
                 <ArrowRight className="w-4 h-4" />
@@ -199,7 +199,7 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
 
 function ProgressCard() {
   return (
-    <div className="w-full h-full bg-gradient-to-b from-[#7c3aed] to-[#6d28d9] p-4 pt-8 flex flex-col gap-3">
+    <div className="w-full h-full bg-gradient-to-b from-[#7c3aed] to-[#4338CA] p-4 pt-8 flex flex-col gap-3">
       <p className="text-white/60 text-[10px] font-semibold uppercase tracking-wider">Daily Focus</p>
       <div className="bg-white/10 rounded-2xl p-3">
         <p className="text-white/70 text-[9px] mb-1">Overall Progress</p>

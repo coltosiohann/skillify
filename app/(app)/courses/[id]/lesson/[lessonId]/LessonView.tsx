@@ -169,7 +169,7 @@ function MarkdownRenderer({ content }: { content: string }) {
         code: ({ className, children, ...props }) => {
           const isBlock = className?.includes("language-");
           return isBlock ? (
-            <pre className="bg-[#1e1b4b] text-white/85 rounded-2xl p-4 text-sm font-mono overflow-x-auto my-4 leading-relaxed">
+            <pre className="bg-[#0F172A] dark:bg-[#020617] text-slate-100 rounded-2xl p-4 text-sm font-mono overflow-x-auto my-4 leading-relaxed">
               <code>{children}</code>
             </pre>
           ) : (
@@ -607,7 +607,7 @@ export default function LessonView({
           className={`w-full h-12 rounded-xl font-semibold gap-2 cursor-pointer transition-all ${
             completed
               ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/25"
-              : "bg-primary hover:bg-[#6d28d9] text-white shadow-md shadow-primary/25"
+              : "bg-primary hover:bg-[#4338CA] text-white shadow-md shadow-primary/25"
           } disabled:opacity-60`}
         >
           {loading ? (
@@ -659,7 +659,7 @@ export default function LessonView({
             <Button
               className={`gap-2 rounded-xl cursor-pointer ${
                 completed
-                  ? "bg-primary hover:bg-[#6d28d9] text-white shadow-md shadow-primary/25 animate-pulse"
+                  ? "bg-primary hover:bg-[#4338CA] text-white shadow-md shadow-primary/25 animate-pulse"
                   : "bg-primary/10 text-primary hover:bg-primary/20"
               }`}
             >

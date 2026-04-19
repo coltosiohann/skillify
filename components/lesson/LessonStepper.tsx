@@ -234,7 +234,7 @@ export default function LessonStepper({ content, onAllSectionsViewed }: Props) {
             <button
               type="button"
               onClick={revealNext}
-              className="flex items-center gap-2 px-6 py-3 bg-primary hover:bg-[#6d28d9] text-white rounded-xl font-semibold shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30 cursor-pointer active:scale-[0.97]"
+              className="flex items-center gap-2 px-6 py-3 bg-primary hover:bg-[#4338CA] text-white rounded-xl font-semibold shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30 cursor-pointer active:scale-[0.97]"
             >
               Continue
               <ChevronDown className="w-4 h-4" />

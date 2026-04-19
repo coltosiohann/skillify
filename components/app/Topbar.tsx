@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Search, Menu, BookOpen, GraduationCap, X } from "lucide-react";
+import { Bell, Search, Menu, BookOpen, GraduationCap, X, Zap, Flame } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -233,7 +233,7 @@ export default function Topbar() {
       )}
     </AnimatePresence>
 
-    <header className="h-16 border-b border-primary/8 bg-card flex items-center px-4 md:px-6 gap-4 z-20 flex-shrink-0">
+    <header className="h-16 border-b border-border bg-card shadow-sm shadow-black/[0.03] flex items-center px-4 md:px-6 gap-4 z-20 flex-shrink-0">
       {/* Hamburger — mobile only */}
       <button
         onClick={() => setMobileOpen(true)}
@@ -281,17 +281,17 @@ export default function Topbar() {
       </button>
 
       <div className="flex items-center gap-3 md:ml-auto">
-        {/* XP + Streak */}
+        {/* XP + Streak — clay-style gamification chips */}
         {profile && (
-          <div className="hidden sm:flex items-center gap-3">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/8 text-primary">
-              <span className="text-xs font-bold">⚡</span>
-              <span className="text-xs font-bold">{profile.total_xp.toLocaleString("en-US")} XP</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-600">
-              <span className="text-xs">🔥</span>
-              <span className="text-xs font-bold">{profile.current_streak} day streak</span>
-            </div>
+          <div className="hidden sm:flex items-center gap-2">
+            <span className="chip-xp">
+              <Zap className="w-3 h-3" />
+              {profile.total_xp.toLocaleString("en-US")} XP
+            </span>
+            <span className="chip-streak">
+              <Flame className="w-3 h-3" />
+              {profile.current_streak}d
+            </span>
           </div>
         )}
 

@@ -236,7 +236,7 @@ export default function SettingsClient({ profile, email, userId }: Props) {
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploadingAvatar}
-                      className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center shadow cursor-pointer hover:bg-[#6d28d9] transition-colors disabled:opacity-60"
+                      className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center shadow cursor-pointer hover:bg-[#4338CA] transition-colors disabled:opacity-60"
                       aria-label="Change avatar"
                     >
                       {uploadingAvatar ? <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Camera className="w-3 h-3" />}
@@ -292,7 +292,7 @@ export default function SettingsClient({ profile, email, userId }: Props) {
                   onClick={saveProfile}
                   disabled={saving}
                   className={`w-full h-11 rounded-xl font-semibold gap-2 cursor-pointer transition-all ${
-                    saved ? "bg-emerald-500 hover:bg-emerald-600" : "bg-primary hover:bg-[#6d28d9]"
+                    saved ? "bg-emerald-500 hover:bg-emerald-600" : "bg-primary hover:bg-[#4338CA]"
                   } text-white shadow-md`}
                 >
                   {saving ? (
@@ -384,7 +384,7 @@ export default function SettingsClient({ profile, email, userId }: Props) {
                     }
                   }}
                   disabled={savingNotifs}
-                  className="w-full h-11 rounded-xl font-semibold gap-2 bg-primary hover:bg-[#6d28d9] text-white shadow-md cursor-pointer disabled:opacity-60"
+                  className="w-full h-11 rounded-xl font-semibold gap-2 bg-primary hover:bg-[#4338CA] text-white shadow-md cursor-pointer disabled:opacity-60"
                 >
                   {savingNotifs ? (
                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -471,7 +471,7 @@ export default function SettingsClient({ profile, email, userId }: Props) {
                         </div>
                         <Button
                           onClick={() => toast("Stripe coming soon!", { description: "Payment integration is in the next phase." })}
-                          className="gap-2 rounded-xl bg-primary hover:bg-[#6d28d9] text-white shadow-md shadow-primary/25 cursor-pointer"
+                          className="gap-2 rounded-xl bg-primary hover:bg-[#4338CA] text-white shadow-md shadow-primary/25 cursor-pointer"
                         >
                           Upgrade <ChevronRight className="w-4 h-4" />
                         </Button>

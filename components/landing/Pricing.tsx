@@ -139,7 +139,7 @@ export default function Pricing() {
                   className={`w-full rounded-full font-semibold cursor-pointer ${
                     plan.highlight
                       ? "bg-white text-primary hover:bg-white/90"
-                      : "bg-primary text-white hover:bg-[#6d28d9]"
+                      : "bg-primary text-white hover:bg-[#4338CA]"
                   }`}
                 >
                   {plan.cta}

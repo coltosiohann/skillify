@@ -226,7 +226,7 @@ export default function CourseEditor({ course, modules: initialModules }: Props)
           <Button
             onClick={handleSave}
             disabled={saving}
-            className="bg-primary hover:bg-[#6d28d9] text-white font-semibold rounded-xl shadow-md shadow-primary/25 cursor-pointer flex-shrink-0"
+            className="bg-primary hover:bg-[#4338CA] text-white font-semibold rounded-xl shadow-md shadow-primary/25 cursor-pointer flex-shrink-0"
           >
             {saving ? (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

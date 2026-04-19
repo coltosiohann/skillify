@@ -98,7 +98,7 @@ export default function CoursesClient({ courses, completedLessonIds }: Props) {
           <p className="text-sm text-muted-foreground mt-0.5">{courses.length} course{courses.length !== 1 ? "s" : ""} total</p>
         </div>
         <Link href="/onboarding">
-          <Button className="gap-2 rounded-xl bg-primary hover:bg-[#6d28d9] text-white shadow-md shadow-primary/25 cursor-pointer">
+          <Button className="gap-2 rounded-xl bg-primary hover:bg-[#4338CA] text-white shadow-md shadow-primary/25 cursor-pointer">
             <PlusCircle className="w-4 h-4" />
             New Course
           </Button>
@@ -156,7 +156,7 @@ export default function CoursesClient({ courses, completedLessonIds }: Props) {
           </p>
           {!search && (
             <Link href="/onboarding">
-              <Button className="gap-2 rounded-xl bg-primary hover:bg-[#6d28d9] text-white cursor-pointer">
+              <Button className="gap-2 rounded-xl bg-primary hover:bg-[#4338CA] text-white cursor-pointer">
                 <PlusCircle className="w-4 h-4" /> Create First Course
               </Button>
             </Link>

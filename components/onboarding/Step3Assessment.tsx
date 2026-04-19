@@ -151,7 +151,7 @@ export default function Step3Assessment({ data, onNext, onBack }: Props) {
               <Button variant="outline" onClick={onBack} className="gap-2 rounded-xl border-primary/15 cursor-pointer flex-1">
                 <ArrowLeft className="w-4 h-4" /> Back
               </Button>
-              <Button onClick={handleSkip} className="rounded-xl bg-primary text-white hover:bg-[#6d28d9] cursor-pointer flex-1">
+              <Button onClick={handleSkip} className="rounded-xl bg-primary text-white hover:bg-[#4338CA] cursor-pointer flex-1">
                 Skip — I&apos;ll start as Beginner
               </Button>
             </div>
@@ -267,7 +267,7 @@ export default function Step3Assessment({ data, onNext, onBack }: Props) {
               </Button>
               <Button
                 onClick={handleContinue}
-                className="gap-2 rounded-xl bg-primary text-white hover:bg-[#6d28d9] shadow-md shadow-primary/25 cursor-pointer flex-1"
+                className="gap-2 rounded-xl bg-primary text-white hover:bg-[#4338CA] shadow-md shadow-primary/25 cursor-pointer flex-1"
               >
                 Continue <ArrowRight className="w-4 h-4" />
               </Button>

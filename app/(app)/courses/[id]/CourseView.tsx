@@ -315,7 +315,7 @@ export default function CourseView({
                           Quiz not passed yet
                         </div>
                         <Link href={`/courses/${course.id}/quiz?moduleId=${mod.id}`}>
-                          <button type="button" className="text-xs font-semibold text-primary hover:text-[#6d28d9] transition-colors cursor-pointer">
+                          <button type="button" className="text-xs font-semibold text-primary hover:text-[#4338CA] transition-colors cursor-pointer">
                             Retake Quiz
                           </button>
                         </Link>
@@ -325,7 +325,7 @@ export default function CourseView({
                   return (
                     <div className="px-5 py-3 border-t border-primary/8 bg-primary/3">
                       <Link href={`/courses/${course.id}/quiz?moduleId=${mod.id}`}>
-                        <button type="button" className="flex items-center gap-2 text-sm font-semibold text-primary hover:text-[#6d28d9] transition-colors cursor-pointer">
+                        <button type="button" className="flex items-center gap-2 text-sm font-semibold text-primary hover:text-[#4338CA] transition-colors cursor-pointer">
                           <Brain className="w-4 h-4" />
                           Take Module Quiz · +150 XP
                         </button>
