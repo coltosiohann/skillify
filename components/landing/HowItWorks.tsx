@@ -40,7 +40,7 @@ export default function HowItWorks() {
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section id="how-it-works" ref={ref} className="py-24 px-4 bg-[#faf9ff]">
+    <section id="how-it-works" ref={ref} className="py-24 px-4 bg-muted/40">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.div
@@ -68,7 +68,7 @@ export default function HowItWorks() {
               initial={{ opacity: 0, y: 32 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: 0.1 + i * 0.1, ease: "easeOut" as const }}
-              className="relative bg-white rounded-2xl border border-primary/8 p-6 shadow-sm hover:shadow-md hover:shadow-primary/8 transition-all duration-200 cursor-default"
+              className="relative bg-white rounded-2xl border border-border p-6 shadow-sm hover:shadow-md hover:shadow-primary/5 transition-all duration-200 cursor-default"
             >
               {/* Connector line */}
               {i < steps.length - 1 && (

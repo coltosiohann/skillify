@@ -16,7 +16,7 @@ export default function CTA() {
         initial={{ opacity: 0, y: 32 }}
         animate={inView ? { opacity: 1, y: 0 } : {}}
         transition={{ duration: 0.6, ease: "easeOut" as const }}
-        className="max-w-4xl mx-auto relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-violet-600 to-violet-800 p-12 text-center shadow-2xl shadow-primary/30"
+        className="max-w-4xl mx-auto relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#3730A3] via-[#5B4CF5] to-[#4F46E5] p-12 text-center shadow-2xl shadow-primary/30"
       >
         {/* Decorative glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none" />

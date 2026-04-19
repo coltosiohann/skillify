@@ -10,13 +10,13 @@ const links = {
 
 export default function Footer() {
   return (
-    <footer className="bg-[#faf9ff] border-t border-primary/8">
+    <footer className="bg-card border-t border-border">
       <div className="max-w-6xl mx-auto px-4 py-16">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-10 mb-12">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4 cursor-pointer w-fit">
-              <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-md shadow-primary/30">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-md shadow-primary/30" style={{ background: "linear-gradient(135deg, #5B4CF5, #818CF8)" }}>
                 <Zap className="w-4 h-4 text-white fill-white" />
               </div>
               <span className="font-heading font-bold text-lg text-foreground">Skillify</span>
@@ -43,7 +43,7 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="border-t border-primary/8 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="border-t border-border pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} Skillify. All rights reserved.
           </p>

@@ -193,7 +193,7 @@ export default function AchievementsClient({ profile, courses, progress }: Props
       >
         {[
           { label: "Total XP", value: xp.toLocaleString(), icon: Zap, color: "text-primary bg-primary/10" },
-          { label: "Day Streak", value: streak, icon: Flame, color: "text-amber-600 bg-amber-50" },
+          { label: "Day Streak", value: streak, icon: Flame, color: "text-rose-600 bg-rose-50" },
           { label: "Lessons Done", value: lessonsCompleted, icon: BookOpen, color: "text-emerald-600 bg-emerald-50" },
           { label: "Courses Done", value: coursesCompleted, icon: Trophy, color: "text-violet-600 bg-violet-50" },
         ].map((stat, i) => (

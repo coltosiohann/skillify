@@ -62,7 +62,7 @@ export default function LoginPage() {
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-primary/10" />
           </div>
-          <div className="relative flex justify-center text-xs text-muted-foreground bg-white px-3 w-fit mx-auto">
+          <div className="relative flex justify-center text-xs text-muted-foreground bg-card px-3 w-fit mx-auto">
             or continue with email
           </div>
         </div>

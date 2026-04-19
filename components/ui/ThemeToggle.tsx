@@ -27,8 +27,8 @@ export default function ThemeToggle({ variant = "icon" }: Props) {
             value === "light"
               ? "bg-white"
               : value === "dark"
-              ? "bg-[#0f0a1e]"
-              : "bg-gradient-to-br from-white to-[#0f0a1e]";
+              ? "bg-[#0F172A]"
+              : "bg-gradient-to-br from-white to-[#0F172A]";
 
           return (
             <button

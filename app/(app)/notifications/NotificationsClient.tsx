@@ -154,8 +154,8 @@ export default function NotificationsClient({ progress, courses, totalXp, curren
           description: `You've maintained a ${milestone}-day learning streak. Impressive!`,
           date: milestoneDate,
           icon: Flame,
-          iconColor: "text-orange-600",
-          iconBg: "bg-orange-50",
+          iconColor: "text-rose-600",
+          iconBg: "bg-rose-50",
         });
       }
     }

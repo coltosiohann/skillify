@@ -86,7 +86,7 @@ function RoadmapMockup() {
     { label: "Advanced Topics", done: false, active: false },
   ];
   return (
-    <div className="w-72 bg-white rounded-3xl shadow-xl shadow-primary/12 border border-primary/8 p-6">
+    <div className="w-72 bg-white rounded-3xl shadow-xl shadow-black/8 border border-border p-6">
       <p className="font-heading font-bold text-foreground mb-5 text-sm">Your Learning Roadmap</p>
       <div className="relative">
         {/* Vertical line */}
@@ -131,7 +131,7 @@ function RoadmapMockup() {
 
 function GamificationMockup() {
   return (
-    <div className="w-72 bg-white rounded-3xl shadow-xl shadow-primary/12 border border-primary/8 p-6 flex flex-col gap-4">
+    <div className="w-72 bg-white rounded-3xl shadow-xl shadow-black/8 border border-border p-6 flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <p className="font-heading font-bold text-foreground text-sm">Today&apos;s Progress</p>
         <div className="px-3 py-1 rounded-full bg-[#fef3c7] text-[#d97706] text-xs font-bold">🔥 7 Day Streak</div>
@@ -144,7 +144,7 @@ function GamificationMockup() {
         </div>
         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-primary to-violet-400 rounded-full"
+            className="h-full bg-gradient-to-r from-[#5B4CF5] to-[#818CF8] rounded-full"
             initial={{ width: "0%" }}
             whileInView={{ width: "62%" }}
             transition={{ duration: 1.2, ease: "easeOut" as const, delay: 0.3 }}
@@ -180,7 +180,7 @@ function GamificationMockup() {
 
 function SkillInputMockup() {
   return (
-    <div className="w-72 bg-white rounded-3xl shadow-xl shadow-primary/12 border border-primary/8 p-6 flex flex-col gap-5">
+    <div className="w-72 bg-white rounded-3xl shadow-xl shadow-black/8 border border-border p-6 flex flex-col gap-5">
       <div className="text-center">
         <p className="font-heading font-bold text-foreground text-base mb-1">What&apos;s your next <span className="text-gradient">triumph?</span></p>
         <p className="text-xs text-muted-foreground">Describe your ambition — AI builds the perfect path.</p>

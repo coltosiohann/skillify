@@ -69,7 +69,7 @@ export default function Pricing() {
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section id="pricing" ref={ref} className="py-24 px-4 bg-[#faf9ff]">
+    <section id="pricing" ref={ref} className="py-24 px-4 bg-muted/40">
       <div className="max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -98,11 +98,11 @@ export default function Pricing() {
               className={`relative flex flex-col rounded-2xl p-6 ${
                 plan.highlight
                   ? "bg-primary text-white shadow-2xl shadow-primary/30 scale-[1.03]"
-                  : "bg-white border border-primary/8 shadow-sm"
+                  : "bg-white border border-border shadow-sm"
               }`}
             >
               {plan.badge && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-[#f59e0b] text-white text-xs font-bold shadow-md whitespace-nowrap">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-amber-500 text-white text-xs font-bold shadow-md whitespace-nowrap">
                   {plan.badge}
                 </div>
               )}

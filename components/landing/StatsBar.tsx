@@ -50,7 +50,7 @@ export default function StatsBar() {
         initial={{ opacity: 0, y: 32 }}
         animate={inView ? { opacity: 1, y: 0 } : {}}
         transition={{ duration: 0.6, ease: "easeOut" as const }}
-        className="max-w-3xl mx-auto glass-card rounded-2xl px-6 py-8 shadow-xl shadow-primary/8"
+        className="max-w-3xl mx-auto card-raised rounded-2xl px-6 py-8 shadow-xl shadow-black/5"
       >
         <div className="grid grid-cols-3 gap-6">
           {stats.map((s, i) => (

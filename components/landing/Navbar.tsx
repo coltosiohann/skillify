@@ -30,14 +30,14 @@ export default function Navbar() {
       transition={{ duration: 0.5, ease: "easeOut" as const }}
       className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-6xl transition-all duration-300 ${
         scrolled
-          ? "glass-card shadow-lg shadow-primary/10"
-          : "bg-white/60 backdrop-blur-md border border-white/50"
+          ? "bg-card/95 backdrop-blur-md border border-border shadow-lg shadow-black/5"
+          : "bg-white/80 backdrop-blur-sm border border-white/60"
       } rounded-2xl`}
     >
       <div className="flex items-center justify-between px-5 py-3">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 cursor-pointer">
-          <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-md shadow-primary/30">
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-md shadow-primary/30" style={{ background: "linear-gradient(135deg, #5B4CF5, #818CF8)" }}>
             <Zap className="w-4 h-4 text-white fill-white" />
           </div>
           <span className="font-heading font-bold text-lg text-foreground">Skillify</span>

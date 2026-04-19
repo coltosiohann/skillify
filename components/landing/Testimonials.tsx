@@ -80,7 +80,7 @@ export default function Testimonials() {
               initial={{ opacity: 0, y: 28 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: 0.05 + i * 0.08, ease: "easeOut" as const }}
-              className="bg-white rounded-2xl border border-primary/8 p-6 shadow-sm hover:shadow-md hover:shadow-primary/8 hover:-translate-y-1 transition-all duration-200 cursor-default"
+              className="bg-white rounded-2xl border border-border p-6 shadow-sm hover:shadow-md hover:shadow-black/8 hover:-translate-y-1 transition-all duration-200 cursor-default"
             >
               <div className="flex gap-0.5 mb-4">
                 {[...Array(t.stars)].map((_, j) => (

@@ -202,7 +202,7 @@ export default function LeaderboardClient({ allTime, weekly, currentUserId }: Pr
                   </p>
                   {entry.current_streak > 0 && (
                     <div className="flex items-center gap-1">
-                      <Flame className="w-3 h-3 text-orange-500" />
+                      <Flame className="w-3 h-3 text-rose-500" />
                       <span className="text-xs text-muted-foreground">{entry.current_streak}d streak</span>
                     </div>
                   )}

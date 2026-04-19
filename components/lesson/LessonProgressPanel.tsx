@@ -102,7 +102,7 @@ export default function LessonProgressPanel({ lessons, currentLessonId, courseId
           aria-label="Show lesson progress"
         >
           <List className="w-5 h-5" />
-          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-400 text-[10px] font-bold text-white flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-500 text-[10px] font-bold text-white flex items-center justify-center">
             {currentIndex + 1}
           </span>
         </button>
