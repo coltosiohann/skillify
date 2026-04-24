@@ -21,6 +21,7 @@ export type Database = {
           full_name: string | null;
           avatar_url: string | null;
           plan: PlanType;
+          stripe_customer_id: string | null;
           courses_generated_this_month: number;
           total_xp: number;
           current_streak: number;
@@ -37,6 +38,7 @@ export type Database = {
           full_name?: string | null;
           avatar_url?: string | null;
           plan?: PlanType;
+          stripe_customer_id?: string | null;
           courses_generated_this_month?: number;
           total_xp?: number;
           current_streak?: number;
@@ -52,6 +54,7 @@ export type Database = {
           full_name?: string | null;
           avatar_url?: string | null;
           plan?: PlanType;
+          stripe_customer_id?: string | null;
           courses_generated_this_month?: number;
           total_xp?: number;
           current_streak?: number;
@@ -281,29 +284,84 @@ export type Database = {
       };
       subscriptions: {
         Row: {
+          id: string;                    // Stripe sub id (sub_...)
+          user_id: string;
+          status: string;                // trialing|active|past_due|canceled|incomplete|unpaid
+          price_id: string;
+          plan: "free" | "pro";
+          interval: "month" | "year";
+          current_period_end: string;
+          cancel_at_period_end: boolean;
+          trial_end: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
           id: string;
           user_id: string;
-          stripe_subscription_id: string;
-          stripe_customer_id: string;
-          plan: PlanType;
           status: string;
+          price_id: string;
+          plan: "free" | "pro";
+          interval: "month" | "year";
           current_period_end: string;
+          cancel_at_period_end?: boolean;
+          trial_end?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          status?: string;
+          price_id?: string;
+          plan?: "free" | "pro";
+          interval?: "month" | "year";
+          current_period_end?: string;
+          cancel_at_period_end?: boolean;
+          trial_end?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      stripe_events: {
+        Row: {
+          id: string;
+          type: string;
+          payload: Json;
+          received_at: string;
+        };
+        Insert: {
+          id: string;
+          type: string;
+          payload: Json;
+          received_at?: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      invoices: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          amount_paid: number | null;
+          currency: string | null;
+          status: string | null;
+          hosted_invoice_url: string | null;
+          invoice_pdf: string | null;
           created_at: string;
         };
         Insert: {
-          id?: string;
-          user_id: string;
-          stripe_subscription_id: string;
-          stripe_customer_id: string;
-          plan: PlanType;
-          status: string;
-          current_period_end: string;
+          id: string;
+          user_id?: string | null;
+          amount_paid?: number | null;
+          currency?: string | null;
+          status?: string | null;
+          hosted_invoice_url?: string | null;
+          invoice_pdf?: string | null;
           created_at?: string;
         };
         Update: {
-          plan?: PlanType;
-          status?: string;
-          current_period_end?: string;
+          status?: string | null;
+          hosted_invoice_url?: string | null;
+          invoice_pdf?: string | null;
         };
         Relationships: [];
       };
