@@ -1,9 +1,22 @@
 export const dynamic = "force-dynamic";
 
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Bookmark, BookOpen, ArrowRight } from "lucide-react";
+
+const BookmarkLessonSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  estimated_minutes: z.number(),
+  difficulty: z.string(),
+  xp_reward: z.number(),
+  modules: z.object({
+    title: z.string(),
+    courses: z.object({ id: z.string(), title: z.string(), user_id: z.string() }),
+  }),
+});
 
 export default async function BookmarksPage() {
   const supabase = await createClient();
@@ -30,23 +43,21 @@ export default async function BookmarksPage() {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  const items = (bookmarks ?? []).map((b) => {
-    const lesson = b.lessons as unknown as {
-      id: string; title: string; estimated_minutes: number; difficulty: string; xp_reward: number;
-      modules: { title: string; courses: { id: string; title: string; user_id: string } };
-    };
-    return {
+  const items = (bookmarks ?? []).flatMap((b) => {
+    const lesson = BookmarkLessonSchema.safeParse(b.lessons);
+    if (!lesson.success) return [];
+    return [{
       bookmarkId: b.id,
-      lessonId: lesson.id,
-      lessonTitle: lesson.title,
-      estimatedMinutes: lesson.estimated_minutes,
-      difficulty: lesson.difficulty,
-      xpReward: lesson.xp_reward,
-      moduleTitle: lesson.modules.title,
-      courseId: lesson.modules.courses.id,
-      courseTitle: lesson.modules.courses.title,
-    };
-  }).filter((b) => b.courseId); // only own courses
+      lessonId: lesson.data.id,
+      lessonTitle: lesson.data.title,
+      estimatedMinutes: lesson.data.estimated_minutes,
+      difficulty: lesson.data.difficulty,
+      xpReward: lesson.data.xp_reward,
+      moduleTitle: lesson.data.modules.title,
+      courseId: lesson.data.modules.courses.id,
+      courseTitle: lesson.data.modules.courses.title,
+    }];
+  });
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">

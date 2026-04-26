@@ -15,6 +15,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import Link from "next/link";
 import { getCurrentLevel, getNextLevel } from "@/lib/levels";
+import { logError } from "@/lib/logger";
 
 interface Profile {
   full_name: string | null;
@@ -63,6 +64,7 @@ function CheckIcon({ className }: { className?: string }) {
 
 export default function ProfileClient({ profile, email, courses, progress }: Props) {
   const [fullName, setFullName]               = useState(profile?.full_name ?? "");
+  const [displayName, setDisplayName]         = useState(profile?.full_name ?? "");
   const [avatarUrl, setAvatarUrl]             = useState(profile?.avatar_url ?? null);
   const [saving, setSaving]                   = useState(false);
   const [saved, setSaved]                     = useState(false);
@@ -101,17 +103,25 @@ export default function ProfileClient({ profile, email, courses, progress }: Pro
   }
 
   async function saveProfile() {
+    const trimmed = fullName.trim() || null;
+    // Optimistic update — reflect change immediately in the UI
+    const previous = displayName;
+    setDisplayName(trimmed ?? email?.split("@")[0] ?? "");
     setSaving(true);
     try {
       const { error } = await supabase.from("profiles")
-        .update({ full_name: fullName.trim() || null })
+        .update({ full_name: trimmed })
         .eq("id", (await supabase.auth.getUser()).data.user!.id);
       if (error) throw error;
       setSaved(true);
       toast.success("Profile saved!");
       setTimeout(() => setSaved(false), 2000);
-    } catch { toast.error("Failed to save"); }
-    finally { setSaving(false); }
+    } catch (err) {
+      // Roll back on failure
+      setDisplayName(previous);
+      logError("profile/save", err);
+      toast.error("Failed to save");
+    } finally { setSaving(false); }
   }
 
   const xp           = profile?.total_xp      ?? 0;
@@ -125,7 +135,7 @@ export default function ProfileClient({ profile, email, courses, progress }: Pro
   const joinDate     = new Date(profile?.created_at ?? Date.now())
     .toLocaleDateString("en-US", { month: "long", year: "numeric" });
   const plan     = planBadge[profile?.plan ?? "free"] ?? planBadge.free;
-  const initials = (profile?.full_name ?? email)
+  const initials = (displayName || email)
     ?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) ?? "SK";
 
   const completedCourses = courses.filter((c) => c.status === "completed").length;

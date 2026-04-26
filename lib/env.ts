@@ -10,6 +10,16 @@ const EnvSchema = z.object({
   // Supabase (required)
   NEXT_PUBLIC_SUPABASE_URL: z.string().url("NEXT_PUBLIC_SUPABASE_URL must be a valid URL"),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, "NEXT_PUBLIC_SUPABASE_ANON_KEY is required"),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().default(""),
+
+  // Stripe (runtime required for billing routes)
+  STRIPE_SECRET_KEY: z.string().default(""),
+  STRIPE_WEBHOOK_SECRET: z.string().default(""),
+  STRIPE_PRICE_PRO_MONTHLY: z.string().default(""),
+  STRIPE_PRICE_PRO_ANNUAL: z.string().default(""),
+
+  // App URL
+  NEXT_PUBLIC_APP_URL: z.string().url("NEXT_PUBLIC_APP_URL must be a valid URL").default("http://localhost:3000"),
 
   // AI providers (at least one must be set — validated at runtime in provider.ts)
   ANTHROPIC_API_KEY: z.string().optional(),

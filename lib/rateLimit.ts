@@ -11,6 +11,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
+import { logError, bizLog } from "@/lib/logger";
 
 // In-memory fallback store
 interface RateLimitEntry {
@@ -43,6 +44,16 @@ interface RateLimitResult {
   resetAt: number;
 }
 
+/** Standard headers to attach to every response from a rate-limited endpoint. */
+export function rateLimitHeaders(rl: RateLimitResult, limit: number): Record<string, string> {
+  return {
+    "RateLimit-Limit": String(limit),
+    "RateLimit-Remaining": String(Math.max(0, rl.remaining)),
+    "RateLimit-Reset": String(Math.ceil(rl.resetAt / 1000)),
+    ...(rl.allowed ? {} : { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) }),
+  };
+}
+
 export async function checkRateLimit(identifier: string, opts: RateLimitOptions): Promise<RateLimitResult> {
   const key = `${opts.prefix}:${identifier}`;
   const now = Date.now();
@@ -70,21 +81,33 @@ export async function checkRateLimit(identifier: string, opts: RateLimitOptions)
     }
 
     if (existing.count >= opts.limit) {
+      bizLog.rateLimitTriggered(identifier, opts.prefix, opts.limit);
       return { allowed: false, remaining: 0, resetAt: new Date(existing.reset_at).getTime() };
     }
 
-    // Increment count
-    await supabase
+    // Optimistic locking: only increment if count hasn't changed since we read it.
+    // If another concurrent request already incremented, this update matches 0 rows
+    // and we deny to avoid over-counting.
+    const { data: updated } = await supabase
       .from("rate_limits")
       .update({ count: existing.count + 1 })
-      .eq("key", key);
+      .eq("key", key)
+      .eq("count", existing.count)
+      .select("count")
+      .maybeSingle();
+
+    if (!updated) {
+      // Concurrent request won the race — deny to be safe
+      return { allowed: false, remaining: 0, resetAt: new Date(existing.reset_at).getTime() };
+    }
 
     return {
       allowed: true,
-      remaining: opts.limit - (existing.count + 1),
+      remaining: opts.limit - updated.count,
       resetAt: new Date(existing.reset_at).getTime(),
     };
-  } catch {
+  } catch (err) {
+    logError("rateLimit/db", err, { key: `${opts.prefix}:${identifier}` });
     // Fallback to in-memory
     const entry = memStore.get(key);
     if (!entry || entry.resetAt <= now) {

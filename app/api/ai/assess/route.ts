@@ -6,18 +6,35 @@ import {
   getEvaluateLevelPrompt,
   type AssessmentQuestion,
 } from "@/lib/prompts/level-assessor";
-import { checkRateLimit } from "@/lib/rateLimit";
+import { checkRateLimit, rateLimitHeaders } from "@/lib/rateLimit";
 import { z } from "zod";
 
-function parseJSON(raw: string) {
+const AssessmentQuestionsSchema = z.object({
+  questions: z.array(z.object({
+    id: z.number(),
+    question: z.string(),
+    options: z.array(z.string()),
+    correct_index: z.number().optional(),
+  })),
+});
+
+const AssessmentResultSchema = z.object({
+  level: z.string(),
+  score: z.number().optional(),
+  reasoning: z.string().optional(),
+});
+
+function parseJSON(raw: string): unknown {
   return JSON.parse(raw.replace(/```json\s*|```/g, "").trim());
 }
 
-function getIP(req: NextRequest): string {
+const ASSESS_LIMIT = 10;
+
+function getIP(req: NextRequest): string | null {
   return (
     req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
     req.headers.get("x-real-ip") ??
-    "unknown"
+    null
   );
 }
 
@@ -39,15 +56,33 @@ export async function GET(req: NextRequest) {
   }
   const { domain } = parsed.data;
 
-  // Rate limit by IP for anonymous endpoint
-  const rl = await checkRateLimit(getIP(req), { limit: 10, windowSec: 3600, prefix: "assess-get" });
+  // Prefer authenticated user ID; fall back to IP. Reject if neither is determinable.
+  const supabase = await createClient();
+  let rateLimitKey: string;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      rateLimitKey = `user:${user.id}`;
+    } else {
+      const ip = getIP(req);
+      if (!ip) return NextResponse.json({ error: "Unable to determine client identity" }, { status: 400 });
+      rateLimitKey = ip;
+    }
+  } catch {
+    const ip = getIP(req);
+    if (!ip) return NextResponse.json({ error: "Unable to determine client identity" }, { status: 400 });
+    rateLimitKey = ip;
+  }
+
+  // Shared bucket with POST so combined usage is capped at 10/hour
+  const ASSESS_LIMIT = 10;
+  const rl = await checkRateLimit(rateLimitKey, { limit: ASSESS_LIMIT, windowSec: 3600, prefix: "assess" });
+  const rlHeaders = rateLimitHeaders(rl, ASSESS_LIMIT);
+
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "Too many requests. Please try again later." },
-      {
-        status: 429,
-        headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
-      }
+      { status: 429, headers: rlHeaders }
     );
   }
 
@@ -56,34 +91,42 @@ export async function GET(req: NextRequest) {
       getAssessmentQuestionsPrompt(domain),
       "You are an expert educator. Return only valid JSON."
     );
-    const data = parseJSON(raw);
-    return NextResponse.json(data);
+    const data = AssessmentQuestionsSchema.parse(parseJSON(raw));
+    return NextResponse.json(data, { headers: rlHeaders });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Failed to generate questions";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: msg }, { status: 500, headers: rlHeaders });
   }
 }
 
 // POST /api/ai/assess — evaluate level from answers (uses userId if authenticated, else IP)
 export async function POST(req: NextRequest) {
-  // Try to get authenticated user; fall back to IP for unauthenticated calls
+  // Try to get authenticated user; fall back to IP. Reject if neither is determinable.
   const supabase = await createClient();
   let rateLimitKey: string;
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    rateLimitKey = user ? `user:${user.id}` : getIP(req);
+    if (user) {
+      rateLimitKey = `user:${user.id}`;
+    } else {
+      const ip = getIP(req);
+      if (!ip) return NextResponse.json({ error: "Unable to determine client identity" }, { status: 400 });
+      rateLimitKey = ip;
+    }
   } catch {
-    rateLimitKey = getIP(req);
+    const ip = getIP(req);
+    if (!ip) return NextResponse.json({ error: "Unable to determine client identity" }, { status: 400 });
+    rateLimitKey = ip;
   }
 
-  const rl = await checkRateLimit(rateLimitKey, { limit: 10, windowSec: 3600, prefix: "assess-post" });
+  // Shared bucket with GET so combined GET+POST usage is capped at 10/hour
+  const rl = await checkRateLimit(rateLimitKey, { limit: ASSESS_LIMIT, windowSec: 3600, prefix: "assess" });
+  const rlHeaders = rateLimitHeaders(rl, ASSESS_LIMIT);
+
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "Too many requests. Please try again later." },
-      {
-        status: 429,
-        headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
-      }
+      { status: 429, headers: rlHeaders }
     );
   }
 
@@ -102,10 +145,10 @@ export async function POST(req: NextRequest) {
       getEvaluateLevelPrompt(body.domain, body.questions as AssessmentQuestion[], body.answers as Record<number, string>),
       "You are an expert educator. Return only valid JSON."
     );
-    const data = parseJSON(raw);
-    return NextResponse.json(data);
+    const data = AssessmentResultSchema.parse(parseJSON(raw));
+    return NextResponse.json(data, { headers: rlHeaders });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Failed to evaluate level";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: msg }, { status: 500, headers: rlHeaders });
   }
 }

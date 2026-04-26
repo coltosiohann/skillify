@@ -66,10 +66,14 @@ export default function GeneratingPage() {
   const [completedLessons, setCompletedLessons] = useState(0);
   const [failedLessons, setFailedLessons] = useState<FailedLesson[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
+  // Set once the course skeleton has been saved — enables early redirect
+  const [earlyAccessCourseId, setEarlyAccessCourseId] = useState<string | null>(null);
 
   // lesson content keyed by "moduleIndex-lessonIndex"
   const lessonResults = useRef(new Map<string, LessonPayload>());
   const outlineRef = useRef<CourseOutline | null>(null);
+  const courseIdRef = useRef<string | null>(null);
+  const lessonIdMap = useRef(new Map<string, string>()); // "mIdx-lIdx" → DB lesson id
   const didRun = useRef(false);
 
   useEffect(() => {
@@ -105,6 +109,88 @@ export default function GeneratingPage() {
       setProgress(Math.min(95, pct));
     }
   }, [completedLessons, totalLessons, phase]);
+
+  // ── Progressive save helpers ──────────────────────────────────────────────
+
+  async function saveSkeleton(currentOutline: CourseOutline, wizard: Record<string, unknown>) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: courseRow, error: courseErr } = await supabase
+      .from("courses")
+      .insert({
+        user_id: user.id,
+        title: currentOutline.title,
+        domain: wizard.domain as string,
+        detected_level: wizard.detectedLevel as string,
+        duration_weeks: wizard.durationWeeks as number,
+        learning_style: wizard.learningStyle as string,
+        minutes_per_day: wizard.minutesPerDay as number,
+        status: "active",
+      } as never)
+      .select("id")
+      .single();
+
+    if (courseErr || !courseRow) return;
+    courseIdRef.current = courseRow.id;
+    supabase.rpc("increment_courses_generated" as never).then(() => {});
+
+    for (let mIdx = 0; mIdx < currentOutline.modules.length; mIdx++) {
+      const mod = currentOutline.modules[mIdx];
+      const { data: modRow, error: modErr } = await supabase
+        .from("modules")
+        .insert({
+          course_id: courseRow.id,
+          title: mod.title,
+          description: mod.description ?? "",
+          order_index: mod.order_index ?? mIdx,
+          duration_days: mod.duration_days ?? 7,
+        })
+        .select("id")
+        .single();
+
+      if (modErr || !modRow) continue;
+
+      const placeholders = mod.lessons.map((stub, lIdx) => ({
+        module_id: modRow.id,
+        title: stub.title,
+        content_markdown: `# ${stub.title}\n\nThis lesson is being prepared...`,
+        content_json: null,
+        resources_json: [] as unknown as import("@/lib/supabase/types").Json,
+        order_index: stub.order_index ?? lIdx,
+        xp_reward: stub.xp_reward ?? 50,
+        estimated_minutes: stub.estimated_minutes ?? 8,
+        difficulty: stub.difficulty ?? "standard",
+      }));
+
+      if (placeholders.length > 0) {
+        const { data: insertedLessons } = await supabase
+          .from("lessons")
+          .insert(placeholders as never)
+          .select("id");
+
+        (insertedLessons ?? []).forEach((row, lIdx) => {
+          lessonIdMap.current.set(`${mIdx}-${lIdx}`, row.id);
+        });
+      }
+    }
+
+    setEarlyAccessCourseId(courseRow.id);
+  }
+
+  async function updateLesson(mIdx: number, lIdx: number, payload: LessonPayload) {
+    const lessonId = lessonIdMap.current.get(`${mIdx}-${lIdx}`);
+    if (!lessonId) return;
+
+    await supabase
+      .from("lessons")
+      .update({
+        content_markdown: payload.content_markdown,
+        content_json: payload.content_json as unknown as import("@/lib/supabase/types").Json,
+        resources_json: payload.resources_json as unknown as import("@/lib/supabase/types").Json,
+      })
+      .eq("id", lessonId);
+  }
 
   // ── Main generation function ──────────────────────────────────────────────
 
@@ -175,6 +261,8 @@ export default function GeneratingPage() {
               const d = data as OutlineEventData;
               outlineRef.current = d.outline;
               setOutline(d.outline);
+              // Progressive save: persist skeleton immediately so user can navigate early
+              saveSkeleton(d.outline, wizard).catch(console.error);
               break;
             }
 
@@ -182,6 +270,8 @@ export default function GeneratingPage() {
               const d = data as LessonEventData;
               lessonResults.current.set(`${d.moduleIndex}-${d.lessonIndex}`, d.lesson);
               setCompletedLessons(d.current);
+              // Incrementally update the placeholder lesson row
+              updateLesson(d.moduleIndex, d.lessonIndex, d.lesson).catch(console.error);
 
               // Build label: "Module 2 — Lesson 3: Title"
               const mod = outlineRef.current?.modules[d.moduleIndex];
@@ -224,72 +314,77 @@ export default function GeneratingPage() {
       setProgress(96);
       setStatusLabel("Saving your course...");
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
       const currentOutline = outlineRef.current;
       if (!currentOutline) throw new Error("No course outline received");
 
-      // Insert course
-      const { data: courseRow, error: courseErr } = await supabase
-        .from("courses")
-        .insert({
-          user_id: user.id,
-          title: currentOutline.title,
-          domain: wizard.domain,
-          detected_level: wizard.detectedLevel,
-          duration_weeks: wizard.durationWeeks,
-          learning_style: wizard.learningStyle,
-          minutes_per_day: wizard.minutesPerDay,
-          status: "active",
-        })
-        .select("id")
-        .single();
+      let cId = courseIdRef.current;
 
-      if (courseErr) throw courseErr;
-      const cId = courseRow.id;
+      if (!cId) {
+        // Progressive save didn't run (e.g. outline event never fired) — do full save now
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) throw new Error("Not authenticated");
 
-      // Insert modules + lessons (batch inserts per module to avoid N+1)
-      for (let mIdx = 0; mIdx < currentOutline.modules.length; mIdx++) {
-        const mod = currentOutline.modules[mIdx];
-
-        const { data: modRow, error: modErr } = await supabase
-          .from("modules")
+        const { data: courseRow, error: courseErr } = await supabase
+          .from("courses")
           .insert({
-            course_id: cId,
-            title: mod.title,
-            description: mod.description ?? "",
-            order_index: mod.order_index ?? mIdx,
-            duration_days: mod.duration_days ?? 7,
-          })
+            user_id: user.id,
+            title: currentOutline.title,
+            domain: wizard.domain,
+            detected_level: wizard.detectedLevel,
+            duration_weeks: wizard.durationWeeks,
+            learning_style: wizard.learningStyle,
+            minutes_per_day: wizard.minutesPerDay,
+            status: "active",
+          } as never)
           .select("id")
           .single();
 
-        if (modErr) throw modErr;
+        if (courseErr) throw courseErr;
+        cId = courseRow.id;
+        courseIdRef.current = cId;
+        supabase.rpc("increment_courses_generated" as never).then(() => {});
 
-        // Build all lesson rows for this module, then insert in a single call
-        const lessonRows = mod.lessons.map((stub, lIdx) => {
-          const content = lessonResults.current.get(`${mIdx}-${lIdx}`);
-          return {
-            module_id: modRow.id,
-            title: stub.title,
-            content_markdown: content?.content_markdown ?? `# ${stub.title}\n\nThis lesson content is being prepared.`,
-            content_json: (content?.content_json ?? null) as unknown as import("@/lib/supabase/types").Json,
-            resources_json: (content?.resources_json ?? []) as unknown as import("@/lib/supabase/types").Json,
-            order_index: stub.order_index ?? lIdx,
-            xp_reward: stub.xp_reward ?? 50,
-            estimated_minutes: stub.estimated_minutes ?? 8,
-            difficulty: stub.difficulty ?? "standard",
-          };
-        });
+        for (let mIdx = 0; mIdx < currentOutline.modules.length; mIdx++) {
+          const mod = currentOutline.modules[mIdx];
 
-        if (lessonRows.length > 0) {
-          const { error: lessonsErr } = await supabase.from("lessons").insert(lessonRows as never);
-          if (lessonsErr) throw lessonsErr;
+          const { data: modRow, error: modErr } = await supabase
+            .from("modules")
+            .insert({
+              course_id: cId,
+              title: mod.title,
+              description: mod.description ?? "",
+              order_index: mod.order_index ?? mIdx,
+              duration_days: mod.duration_days ?? 7,
+            })
+            .select("id")
+            .single();
+
+          if (modErr) throw modErr;
+
+          const lessonRows = mod.lessons.map((stub, lIdx) => {
+            const content = lessonResults.current.get(`${mIdx}-${lIdx}`);
+            return {
+              module_id: modRow.id,
+              title: stub.title,
+              content_markdown: content?.content_markdown ?? `# ${stub.title}\n\nThis lesson content is being prepared.`,
+              content_json: (content?.content_json ?? null) as unknown as import("@/lib/supabase/types").Json,
+              resources_json: (content?.resources_json ?? []) as unknown as import("@/lib/supabase/types").Json,
+              order_index: stub.order_index ?? lIdx,
+              xp_reward: stub.xp_reward ?? 50,
+              estimated_minutes: stub.estimated_minutes ?? 8,
+              difficulty: stub.difficulty ?? "standard",
+            };
+          });
+
+          if (lessonRows.length > 0) {
+            const { error: lessonsErr } = await supabase.from("lessons").insert(lessonRows as never);
+            if (lessonsErr) throw lessonsErr;
+          }
         }
       }
+      // else: skeleton + lessons were already saved progressively during generation
 
       // Link uploaded document if present
       if (wizard.documentId) {
@@ -303,7 +398,7 @@ export default function GeneratingPage() {
       setProgress(100);
       setPhase("done");
 
-      setTimeout(() => router.push(`/courses/${cId}`), 2500);
+      setTimeout(() => router.push(`/courses/${cId!}`), 2500);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "An error occurred";
       setErrorMsg(msg);
@@ -399,6 +494,23 @@ export default function GeneratingPage() {
                 >
                   {completedLessons} of {totalLessons} lessons generated
                 </motion.p>
+              )}
+
+              {/* Early access: View course while lessons are still generating */}
+              {earlyAccessCourseId && phase === "lessons" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-4"
+                >
+                  <button
+                    onClick={() => router.push(`/courses/${earlyAccessCourseId}`)}
+                    className="w-full bg-white/10 hover:bg-white/20 border border-white/20 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer"
+                  >
+                    View course now →
+                  </button>
+                  <p className="text-white/30 text-xs mt-1.5">More lessons will appear as they finish</p>
+                </motion.div>
               )}
 
               {/* Outline preview — show module titles once we have the outline */}

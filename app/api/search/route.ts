@@ -1,5 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+
+const LessonWithModuleSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  module_id: z.string(),
+  modules: z.object({
+    course_id: z.string(),
+    courses: z.object({
+      id: z.string(),
+      title: z.string(),
+      user_id: z.string(),
+    }),
+  }),
+});
 
 export async function GET(req: NextRequest) {
   const supabase = await createClient();
@@ -24,14 +39,15 @@ export async function GET(req: NextRequest) {
       .limit(5),
   ]);
 
-  const lessons = (lessonsRes.data ?? []).map((l) => {
-    const mod = l.modules as unknown as { course_id: string; courses: { id: string; title: string; user_id: string } };
-    return {
-      id: l.id,
-      title: l.title,
-      courseId: mod?.courses?.id,
-      courseTitle: mod?.courses?.title,
-    };
+  const lessons = (lessonsRes.data ?? []).flatMap((l) => {
+    const parsed = LessonWithModuleSchema.safeParse(l);
+    if (!parsed.success) return [];
+    return [{
+      id: parsed.data.id,
+      title: parsed.data.title,
+      courseId: parsed.data.modules.courses.id,
+      courseTitle: parsed.data.modules.courses.title,
+    }];
   });
 
   return NextResponse.json({ courses: coursesRes.data ?? [], lessons });

@@ -32,6 +32,7 @@ import LessonProgressPanel, {
   type LessonNavItem,
 } from "@/components/lesson/LessonProgressPanel";
 import LessonNotes from "@/components/lesson/LessonNotes";
+import { logError } from "@/lib/logger";
 
 interface Resource {
   type: string;
@@ -250,7 +251,8 @@ export default function LessonView({
         setBookmarked(true);
         toast.success("Lesson bookmarked!");
       }
-    } catch {
+    } catch (err) {
+      logError("lesson/bookmark", err);
       toast.error("Failed to update bookmark");
     } finally {
       setBookmarkLoading(false);

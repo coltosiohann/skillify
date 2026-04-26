@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { logError } from "@/lib/logger";
 
 interface NotifPrefs {
   dailyReminder: boolean;
@@ -35,10 +36,13 @@ interface Profile {
   weekly_xp_goal?: number;
 }
 
-interface Props {
-  profile: Profile | null;
-  email: string;
-  userId: string;
+interface Subscription {
+  status: string;
+  plan: string;
+  interval: string;
+  current_period_end: string;
+  cancel_at_period_end: boolean;
+  trial_end: string | null;
 }
 
 const TABS = [
@@ -48,7 +52,15 @@ const TABS = [
   { id: "billing", label: "Plan & Billing", icon: CreditCard },
 ] as const;
 
-type Tab = typeof TABS[number]["id"];
+export type SettingsTab = typeof TABS[number]["id"];
+
+interface Props {
+  profile: Profile | null;
+  email: string;
+  userId: string;
+  subscription: Subscription | null;
+  initialTab?: SettingsTab;
+}
 
 // Toggle component — fully inline-styled to avoid Tailwind JIT positioning issues
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -87,15 +99,51 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   );
 }
 
-export default function SettingsClient({ profile, email, userId }: Props) {
-  const [activeTab, setActiveTab] = useState<Tab>("profile");
+export default function SettingsClient({ profile, email, userId, subscription, initialTab = "profile" }: Props) {
+  const isPro = subscription?.plan === "pro" &&
+    ["active", "trialing", "past_due"].includes(subscription?.status ?? "");
+  const isTrialing = subscription?.status === "trialing";
+  const isPastDue = subscription?.status === "past_due";
+  const isCanceling = subscription?.status === "active" && subscription?.cancel_at_period_end;
+  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
   const [fullName, setFullName] = useState(profile?.full_name ?? "");
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [billingLoading, setBillingLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
+
+  const handleUpgrade = useCallback(async (planKey: string) => {
+    setBillingLoading(true);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planKey }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to start checkout");
+      window.location.href = data.url;
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+      setBillingLoading(false);
+    }
+  }, []);
+
+  const handleManageBilling = useCallback(async () => {
+    setBillingLoading(true);
+    try {
+      const res = await fetch("/api/stripe/portal", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to open portal");
+      window.location.href = data.url;
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+      setBillingLoading(false);
+    }
+  }, []);
 
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -149,7 +197,8 @@ export default function SettingsClient({ profile, email, userId }: Props) {
       setSaved(true);
       toast.success("Profile saved!");
       setTimeout(() => setSaved(false), 2000);
-    } catch {
+    } catch (err) {
+      logError("settings/saveProfile", err);
       toast.error("Failed to save profile");
     } finally {
       setSaving(false);
@@ -377,7 +426,8 @@ export default function SettingsClient({ profile, email, userId }: Props) {
                         .eq("id", userId);
                       if (error) throw error;
                       toast.success("Preferences saved!");
-                    } catch {
+                    } catch (err) {
+                      logError("settings/savePreferences", err);
                       toast.error("Failed to save preferences");
                     } finally {
                       setSavingNotifs(false);
@@ -451,16 +501,41 @@ export default function SettingsClient({ profile, email, userId }: Props) {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold text-foreground capitalize">{profile?.plan ?? "free"} Plan</p>
+                        <p className="font-semibold text-foreground capitalize">{isPro ? "Pro" : "Free"} Plan</p>
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${plan.color}`}>
-                          {plan.label}
+                          {isTrialing ? "Trial" : isPastDue ? "Past Due" : isCanceling ? "Canceling" : plan.label}
                         </span>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-0.5">{plan.limit}</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {isTrialing && subscription?.trial_end
+                          ? `Trial ends ${new Date(subscription.trial_end).toLocaleDateString()}`
+                          : isCanceling && subscription?.current_period_end
+                          ? `Access until ${new Date(subscription.current_period_end).toLocaleDateString()}`
+                          : isPastDue
+                          ? "Payment failed — update your card to keep access"
+                          : plan.limit}
+                      </p>
                     </div>
                   </div>
 
-                  {(profile?.plan === "free") && (
+                  {/* Status banners */}
+                  {isTrialing && (
+                    <div className="mt-3 p-3 rounded-2xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 text-sm text-violet-700 dark:text-violet-300">
+                      🎉 You&apos;re on a free trial — enjoy full Pro access until {subscription?.trial_end ? new Date(subscription.trial_end).toLocaleDateString() : "your trial ends"}.
+                    </div>
+                  )}
+                  {isPastDue && (
+                    <div className="mt-3 p-3 rounded-2xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-sm text-rose-700 dark:text-rose-300">
+                      ⚠️ Your last payment failed. Update your card to keep Pro access.
+                    </div>
+                  )}
+                  {isCanceling && (
+                    <div className="mt-3 p-3 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-sm text-amber-700 dark:text-amber-300">
+                      📅 Your subscription ends on {subscription?.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString() : "period end"}. You can reactivate anytime.
+                    </div>
+                  )}
+
+                  {!isPro ? (
                     <div className="mt-4 p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-violet-100 border border-primary/20">
                       <p className="font-semibold text-foreground mb-1">Upgrade to Pro</p>
                       <p className="text-sm text-muted-foreground mb-3">Unlock unlimited courses, PDF uploads, full quiz system, and more.</p>
@@ -470,12 +545,25 @@ export default function SettingsClient({ profile, email, userId }: Props) {
                           <span className="text-muted-foreground text-sm">/month</span>
                         </div>
                         <Button
-                          onClick={() => toast("Stripe coming soon!", { description: "Payment integration is in the next phase." })}
+                          onClick={() => handleUpgrade("pro_monthly")}
+                          disabled={billingLoading}
                           className="gap-2 rounded-xl bg-primary hover:bg-[#4338CA] text-white shadow-md shadow-primary/25 cursor-pointer"
                         >
-                          Upgrade <ChevronRight className="w-4 h-4" />
+                          {billingLoading ? "Loading…" : <><span>Upgrade</span> <ChevronRight className="w-4 h-4" /></>}
                         </Button>
                       </div>
+                    </div>
+                  ) : (
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        variant="outline"
+                        onClick={handleManageBilling}
+                        disabled={billingLoading}
+                        className="gap-2 rounded-xl border-primary/20 cursor-pointer"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        {billingLoading ? "Loading…" : "Manage Billing"}
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -498,8 +586,8 @@ export default function SettingsClient({ profile, email, userId }: Props) {
                     ].map((row, i, arr) => (
                       <div key={i} className={`grid grid-cols-4 gap-2 text-sm py-2.5 ${i < arr.length - 1 ? "border-b border-primary/6" : ""}`}>
                         <span className="text-muted-foreground col-span-2 truncate">{row.feature}</span>
-                        <span className={`text-center font-medium ${profile?.plan === "free" ? "text-primary" : "text-foreground/60"}`}>{row.free}</span>
-                        <span className={`text-center font-medium ${profile?.plan === "pro" ? "text-primary" : "text-foreground"}`}>{row.pro}</span>
+                        <span className={`text-center font-medium ${!isPro ? "text-primary" : "text-foreground/60"}`}>{row.free}</span>
+                        <span className={`text-center font-medium ${isPro ? "text-primary" : "text-foreground"}`}>{row.pro}</span>
                       </div>
                     ))}
                   </div>
@@ -507,16 +595,16 @@ export default function SettingsClient({ profile, email, userId }: Props) {
 
                 {/* Usage */}
                 <div className="glass-card rounded-3xl p-6 border border-primary/10">
-                  <h3 className="font-heading font-bold text-foreground mb-4">This Month's Usage</h3>
+                  <h3 className="font-heading font-bold text-foreground mb-4">This Month&apos;s Usage</h3>
                   <div className="space-y-3">
                     <div>
                       <div className="flex justify-between text-sm mb-1.5">
                         <span className="text-muted-foreground">Courses Generated</span>
                         <span className="font-medium text-foreground">
-                          {profile?.courses_generated_this_month ?? 0}/{profile?.plan === "free" ? "2" : "∞"}
+                          {profile?.courses_generated_this_month ?? 0}/{isPro ? "∞" : "2"}
                         </span>
                       </div>
-                      {profile?.plan === "free" && (
+                      {!isPro && (
                         <div className="h-1.5 bg-primary/10 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-primary rounded-full transition-all"

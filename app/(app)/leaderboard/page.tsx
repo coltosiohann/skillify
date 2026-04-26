@@ -1,8 +1,14 @@
 export const dynamic = "force-dynamic";
 
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import LeaderboardClient from "./LeaderboardClient";
+
+const LeaderboardRowSchema = z.object({
+  user_id: z.string(),
+  weekly_xp: z.number(),
+});
 
 export default async function LeaderboardPage() {
   const supabase = await createClient();
@@ -22,8 +28,8 @@ export default async function LeaderboardPage() {
 
   const weeklyXpMap: Record<string, number> = {};
   for (const row of weeklyRows ?? []) {
-    const r = row as unknown as { user_id: string; weekly_xp: number };
-    weeklyXpMap[r.user_id] = r.weekly_xp;
+    const r = LeaderboardRowSchema.safeParse(row);
+    if (r.success) weeklyXpMap[r.data.user_id] = r.data.weekly_xp;
   }
 
   // Fetch profiles for weekly participants not already in allTime
