@@ -1,62 +1,12 @@
 export const dynamic = "force-dynamic";
 import { z } from "zod";
-import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import DashboardClient from "./DashboardClient";
 
 const WeeklyProgressRowSchema = z.object({
   lessons: z.object({ xp_reward: z.number() }).nullable(),
 });
-
-// Cache stable per-user data for 60 seconds to reduce DB load on repeat visits.
-function getDashboardData(userId: string, weekStartIso: string) {
-  return unstable_cache(
-    async () => {
-      const admin = createAdminClient();
-      return Promise.all([
-        admin
-          .from("profiles")
-          .select("full_name, plan, total_xp, current_streak, courses_generated_this_month, weekly_xp_goal, total_minutes_learned")
-          .eq("id", userId)
-          .single(),
-        admin
-          .from("courses")
-          .select(`
-            id, title, domain, detected_level, status, duration_weeks, created_at,
-            modules (
-              id,
-              order_index,
-              lessons ( id, order_index, title )
-            )
-          `)
-          .eq("user_id", userId)
-          .order("created_at", { ascending: false })
-          .limit(6),
-        admin.from("progress").select("lesson_id").eq("user_id", userId),
-        admin
-          .from("progress")
-          .select("lesson_id, lessons!inner(xp_reward)")
-          .eq("user_id", userId)
-          .gte("completed_at", weekStartIso),
-        admin
-          .from("quiz_attempts")
-          .select("xp_awarded")
-          .eq("user_id", userId)
-          .gte("attempted_at", weekStartIso),
-        admin
-          .from("subscriptions")
-          .select("status, plan, trial_end, current_period_end, cancel_at_period_end")
-          .eq("user_id", userId)
-          .in("status", ["trialing", "active", "past_due"])
-          .maybeSingle(),
-      ]);
-    },
-    [`dashboard-${userId}-${weekStartIso}`],
-    { revalidate: 60, tags: [`user-${userId}`] }
-  )();
-}
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -70,9 +20,46 @@ export default async function DashboardPage() {
   const weekStart = new Date(now);
   weekStart.setDate(now.getDate() - daysFromMonday);
   weekStart.setHours(0, 0, 0, 0);
+  const weekStartIso = weekStart.toISOString();
 
   const [profileRes, coursesRes, progressRes, weeklyProgressRes, weeklyQuizRes, subRes] =
-    await getDashboardData(user.id, weekStart.toISOString());
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select("full_name, plan, total_xp, current_streak, courses_generated_this_month, weekly_xp_goal, total_minutes_learned")
+        .eq("id", user.id)
+        .single(),
+      supabase
+        .from("courses")
+        .select(`
+          id, title, domain, detected_level, status, duration_weeks, created_at,
+          modules (
+            id,
+            order_index,
+            lessons ( id, order_index, title )
+          )
+        `)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(6),
+      supabase.from("progress").select("lesson_id").eq("user_id", user.id),
+      supabase
+        .from("progress")
+        .select("lesson_id, lessons!inner(xp_reward)")
+        .eq("user_id", user.id)
+        .gte("completed_at", weekStartIso),
+      supabase
+        .from("quiz_attempts")
+        .select("xp_awarded")
+        .eq("user_id", user.id)
+        .gte("attempted_at", weekStartIso),
+      supabase
+        .from("subscriptions")
+        .select("status, plan, trial_end, current_period_end, cancel_at_period_end")
+        .eq("user_id", user.id)
+        .in("status", ["trialing", "active", "past_due"])
+        .maybeSingle(),
+    ]);
 
   const completedIds = new Set((progressRes.data ?? []).map((p) => p.lesson_id));
 
