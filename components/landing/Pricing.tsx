@@ -2,201 +2,211 @@
 
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import { Check, X, Zap, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 const plans = [
   {
-    name: "Free",
+    tier: "Free",
     price: "$0",
-    period: "forever",
-    desc: "Try Skillify with no commitment.",
-    cta: "Get Started Free",
-    ctaHref: "/signup",
-    highlight: false,
+    per: null,
+    desc: "Everything you need to get started.",
+    cta: "Get started free",
+    href: "/signup",
+    featured: false,
     features: [
-      "2 AI courses per month",
-      "Basic quiz system",
-      "Progress tracking",
-      "Community access",
+      { text: "2 AI courses per month", included: true },
+      { text: "All lesson types", included: true },
+      { text: "Basic quizzes", included: true },
+      { text: "XP & streak tracking", included: true },
+      { text: "PDF upload", included: false },
+      { text: "Completion certificates", included: false },
+      { text: "Course export", included: false },
     ],
-    missing: ["PDF uploads", "Unlimited courses", "Boss Battle challenges", "Completion certificates"],
   },
   {
-    name: "Pro",
-    price: "$9.99",
-    period: "/ month",
-    desc: "Everything you need to master any skill.",
-    cta: "Start Free Trial",
-    ctaHref: "/signup?plan=pro",
-    highlight: true,
-    badge: "Most Popular",
+    tier: "Pro",
+    price: "$9",
+    per: ".99/mo",
+    desc: "For serious learners who want no limits.",
+    cta: "Start Pro free trial",
+    href: "/signup?plan=pro",
+    featured: true,
+    badge: "Most popular",
     features: [
-      "Unlimited AI courses",
-      "PDF upload & extraction",
-      "Full quiz system (all types)",
-      "Boss Battle challenges",
-      "XP badges + certificates",
-      "Streak tracking",
-      "Course export (PDF)",
-      "Priority AI generation",
+      { text: "Unlimited AI courses", included: true },
+      { text: "PDF upload & context", included: true },
+      { text: "All quiz types", included: true },
+      { text: "Completion certificates", included: true },
+      { text: "Streak freeze (1/month)", included: true },
+      { text: "Course export", included: true },
+      { text: "Priority support", included: true },
     ],
-    missing: [],
   },
   {
-    name: "Team",
-    price: "$29.99",
-    period: "/ month",
-    desc: "For teams that learn and grow together.",
-    cta: "Start Team Trial",
-    ctaHref: "/signup?plan=team",
-    highlight: false,
+    tier: "Team",
+    price: "$29",
+    per: ".99/mo",
+    desc: "For teams building a learning culture.",
+    cta: "Start team trial",
+    href: "/signup?plan=team",
+    featured: false,
     features: [
-      "Up to 5 team members",
-      "Shared course library",
-      "Team progress analytics",
-      "Admin dashboard",
-      "All Pro features included",
-      "Priority support",
+      { text: "Up to 5 members", included: true },
+      { text: "Shared course library", included: true },
+      { text: "Team analytics dashboard", included: true },
+      { text: "Admin controls", included: true },
+      { text: "All Pro features", included: true },
+      { text: "SSO & SCIM (coming)", included: true },
+      { text: "Dedicated onboarding", included: true },
     ],
-    missing: [],
   },
 ];
 
 export default function Pricing() {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const inView = useInView(ref as React.RefObject<Element>, { once: true, margin: "-80px" });
 
   return (
-    <section id="pricing" ref={ref} className="relative py-28 px-4 overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, #0F172A 0%, #1A1440 100%)" }} />
-      <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(91,76,245,0.40), transparent)" }} />
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full blur-[100px] pointer-events-none" style={{ background: "rgba(91,76,245,0.12)" }} />
-
-      <div className="relative max-w-5xl mx-auto">
-        {/* Header */}
+    <section
+      id="pricing"
+      ref={ref}
+      style={{ background: "oklch(0.065 0.012 255)", padding: "96px 32px" }}
+    >
+      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.55, ease: "easeOut" as const }}
-          className="text-center mb-16"
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          style={{ textAlign: "center" }}
         >
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold mb-6 border" style={{ background: "rgba(91,76,245,0.15)", borderColor: "rgba(91,76,245,0.30)", color: "#818CF8" }}>
+          <span
+            style={{
+              display: "inline-block", fontSize: "11px", fontWeight: 700,
+              letterSpacing: "1px", textTransform: "uppercase",
+              color: "var(--blue)", marginBottom: "14px",
+            }}
+          >
             Pricing
           </span>
-          <h2 className="font-heading text-4xl sm:text-5xl font-extrabold text-white mb-5">
-            Simple,{" "}
-            <span style={{ background: "linear-gradient(135deg, #818CF8, #C4B5FD)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-              Transparent
-            </span>{" "}
-            Pricing
+          <h2
+            style={{
+              fontFamily: "var(--font-bricolage)",
+              fontSize: "clamp(32px, 3.5vw, 48px)",
+              fontWeight: 800, letterSpacing: "-1.5px", lineHeight: 1.1,
+              color: "#fff", marginBottom: "12px",
+            }}
+          >
+            Start free.<br />Scale when you&apos;re ready.
           </h2>
-          <p className="text-lg max-w-xl mx-auto" style={{ color: "rgba(255,255,255,0.55)" }}>
-            Start free. Upgrade when you&apos;re ready. Cancel anytime.
+          <p style={{ fontSize: "17px", color: "oklch(0.60 0.01 255)", maxWidth: "560px", margin: "0 auto" }}>
+            No credit card required. Free plan is free forever, not a trial.
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-5 items-start">
+        <div
+          style={{
+            display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "16px", marginTop: "56px", alignItems: "stretch",
+          }}
+        >
           {plans.map((plan, i) => (
             <motion.div
-              key={plan.name}
+              key={plan.tier}
               initial={{ opacity: 0, y: 32 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: 0.1 + i * 0.1, ease: "easeOut" as const }}
-              className="relative flex flex-col rounded-2xl p-6"
-              style={
-                plan.highlight
-                  ? {
-                      background: "linear-gradient(145deg, #4338CA, #5B4CF5)",
-                      boxShadow: "0 32px 80px rgba(91,76,245,0.40), 0 0 0 1px rgba(129,140,248,0.20)",
-                    }
-                  : {
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                    }
-              }
+              transition={{ duration: 0.5, delay: 0.1 + i * 0.1, ease: "easeOut" }}
+              style={{
+                borderRadius: "20px", padding: "32px",
+                border: `1px solid ${plan.featured ? "var(--blue-border)" : "oklch(1 0 0 / 0.09)"}`,
+                background: plan.featured ? "oklch(0.13 0.02 255)" : "oklch(0.11 0.015 255)",
+                display: "flex", flexDirection: "column",
+                position: "relative", overflow: "hidden",
+                transition: "transform 0.2s",
+                boxShadow: plan.featured ? "0 0 0 1px var(--blue-border), 0 24px 64px oklch(0.53 0.23 256 / 0.12)" : "none",
+                cursor: "default",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-4px)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
             >
               {plan.badge && (
                 <div
-                  className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold whitespace-nowrap"
-                  style={{ background: "linear-gradient(135deg, #D97706, #F59E0B)", color: "white", boxShadow: "0 4px 14px rgba(217,119,6,0.40)" }}
+                  style={{
+                    position: "absolute", top: "20px", right: "20px",
+                    background: "var(--blue)", color: "#fff",
+                    fontSize: "11px", fontWeight: 700, letterSpacing: "0.3px",
+                    padding: "4px 10px", borderRadius: "99px",
+                  }}
                 >
                   {plan.badge}
                 </div>
               )}
 
-              <div className="mb-6">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
-                  style={{ background: plan.highlight ? "rgba(255,255,255,0.20)" : "rgba(91,76,245,0.20)" }}
-                >
-                  <Zap className={`w-5 h-5 ${plan.highlight ? "text-white" : "text-indigo-400"}`} />
-                </div>
-                <p className={`font-heading font-bold text-xl mb-1 ${plan.highlight ? "text-white" : "text-white"}`}>{plan.name}</p>
-                <p className="text-sm mb-5" style={{ color: plan.highlight ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.45)" }}>{plan.desc}</p>
-                <div className="flex items-end gap-1">
-                  <span className={`font-heading font-extrabold text-4xl ${plan.highlight ? "text-white" : "text-white"}`}>{plan.price}</span>
-                  <span className="text-sm pb-1" style={{ color: plan.highlight ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.35)" }}>{plan.period}</span>
-                </div>
+              <div style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase", color: "oklch(0.50 0.01 255)", marginBottom: "10px" }}>
+                {plan.tier}
               </div>
 
-              <ul className="flex flex-col gap-2.5 flex-1 mb-6">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5">
-                    <div
-                      className="w-4 h-4 mt-0.5 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{ background: plan.highlight ? "rgba(255,255,255,0.20)" : "rgba(91,76,245,0.25)" }}
-                    >
-                      <Check className="w-2.5 h-2.5" style={{ color: plan.highlight ? "white" : "#818CF8" }} />
-                    </div>
-                    <span className="text-sm" style={{ color: plan.highlight ? "rgba(255,255,255,0.90)" : "rgba(255,255,255,0.65)" }}>{f}</span>
-                  </li>
-                ))}
-                {plan.missing.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 opacity-30">
-                    <X className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: "rgba(255,255,255,0.40)" }} />
-                    <span className="text-sm" style={{ color: "rgba(255,255,255,0.40)" }}>{f}</span>
-                  </li>
-                ))}
-              </ul>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "4px", marginBottom: "6px" }}>
+                <span style={{ fontFamily: "var(--font-bricolage)", fontSize: "42px", fontWeight: 800, letterSpacing: "-2px", color: "#fff" }}>
+                  {plan.price}
+                </span>
+                {plan.per && (
+                  <span style={{ fontSize: "14px", color: "oklch(0.50 0.01 255)" }}>{plan.per}</span>
+                )}
+              </div>
 
-              <Link href={plan.ctaHref}>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold cursor-pointer transition-all"
-                  style={
-                    plan.highlight
-                      ? {
-                          background: "white",
-                          color: "#4338CA",
-                          boxShadow: "0 4px 14px rgba(0,0,0,0.15)",
-                        }
-                      : {
-                          background: "rgba(91,76,245,0.25)",
-                          color: "#C4B5FD",
-                          border: "1px solid rgba(91,76,245,0.35)",
-                        }
-                  }
+              <p style={{ fontSize: "14px", color: "oklch(0.50 0.01 255)", marginBottom: "24px" }}>
+                {plan.desc}
+              </p>
+
+              <div style={{ height: "1px", background: "oklch(1 0 0 / 0.07)", marginBottom: "20px" }} />
+
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "10px", marginBottom: "28px" }}>
+                {plan.features.map((f) => (
+                  <div key={f.text} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "14px", color: "oklch(0.75 0.01 255)" }}>
+                    <div
+                      style={{
+                        width: "18px", height: "18px", borderRadius: "5px",
+                        background: f.included ? "var(--emerald-muted)" : "oklch(1 0 0 / 0.04)",
+                        border: `1px solid ${f.included ? "oklch(0.63 0.15 162 / 0.35)" : "oklch(1 0 0 / 0.08)"}`,
+                        display: "grid", placeItems: "center",
+                        fontSize: "10px",
+                        color: f.included ? "var(--emerald)" : "oklch(0.40 0.01 255)",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {f.included ? "✓" : "—"}
+                    </div>
+                    {f.text}
+                  </div>
+                ))}
+              </div>
+
+              <Link href={plan.href}>
+                <button
+                  style={{
+                    width: "100%", padding: "12px", borderRadius: "14px",
+                    fontSize: "14px", fontWeight: 600, fontFamily: "inherit",
+                    background: plan.featured ? "var(--blue)" : "oklch(1 0 0 / 0.07)",
+                    color: plan.featured ? "#fff" : "oklch(0.75 0.01 255)",
+                    border: `1px solid ${plan.featured ? "transparent" : "oklch(1 0 0 / 0.10)"}`,
+                    cursor: "pointer",
+                    transition: "background 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    const el = e.currentTarget as HTMLElement;
+                    el.style.background = plan.featured ? "var(--blue-hover)" : "oklch(1 0 0 / 0.12)";
+                  }}
+                  onMouseLeave={(e) => {
+                    const el = e.currentTarget as HTMLElement;
+                    el.style.background = plan.featured ? "var(--blue)" : "oklch(1 0 0 / 0.07)";
+                  }}
                 >
                   {plan.cta}
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </motion.button>
+                </button>
               </Link>
             </motion.div>
           ))}
         </div>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={inView ? { opacity: 1 } : {}}
-          transition={{ delay: 0.5 }}
-          className="text-center text-sm mt-8"
-          style={{ color: "rgba(255,255,255,0.35)" }}
-        >
-          All plans include a 3-day free trial · No credit card required
-        </motion.p>
       </div>
     </section>
   );

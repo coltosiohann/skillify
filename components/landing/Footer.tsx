@@ -1,83 +1,131 @@
-import Link from "next/link";
-import { Zap } from "lucide-react";
+"use client";
 
-const links = {
-  Product: ["Features", "How It Works", "Pricing", "Changelog"],
-  Company: ["About", "Blog", "Careers", "Press"],
-  Support: ["Help Center", "Contact Us", "Status", "Community"],
-  Legal: ["Privacy Policy", "Terms of Service", "Cookie Policy"],
-};
+import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="relative overflow-hidden" style={{ background: "#0A0E1A" }}>
-      {/* Top border glow */}
-      <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(91,76,245,0.50), transparent)" }} />
-      {/* Subtle orb */}
-      <div className="absolute bottom-0 right-1/4 w-[400px] h-[200px] rounded-full blur-[100px] pointer-events-none" style={{ background: "rgba(91,76,245,0.06)" }} />
-
-      <div className="relative max-w-6xl mx-auto px-4 pt-16 pb-10">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-10 mb-14">
+    <footer
+      style={{
+        background: "oklch(0.06 0.010 255)",
+        borderTop: "1px solid oklch(1 0 0 / 0.07)",
+        padding: "48px 32px 32px",
+      }}
+    >
+      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "2fr 1fr 1fr 1fr",
+            gap: "48px",
+            marginBottom: "40px",
+          }}
+        >
           {/* Brand */}
-          <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2.5 mb-5 cursor-pointer w-fit">
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "9px", marginBottom: "10px" }}>
               <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, #5B4CF5, #818CF8)", boxShadow: "0 4px 14px rgba(91,76,245,0.40)" }}
+                style={{
+                  width: "30px",
+                  height: "30px",
+                  borderRadius: "8px",
+                  background: "var(--blue)",
+                  display: "grid",
+                  placeItems: "center",
+                  fontFamily: "var(--font-bricolage)",
+                  fontWeight: 800,
+                  fontSize: "16px",
+                  color: "#fff",
+                }}
               >
-                <Zap className="w-4 h-4 text-white fill-white" />
+                S
               </div>
-              <span className="font-heading font-bold text-lg text-white">Skillify</span>
-            </Link>
-            <p className="text-sm leading-relaxed mb-6 max-w-[200px]" style={{ color: "rgba(255,255,255,0.40)" }}>
-              AI-powered personalized learning paths for any skill, tailored to your level and timeline.
-            </p>
-            {/* Social links */}
-            <div className="flex items-center gap-3">
-              {["Twitter", "GitHub", "LinkedIn"].map((s) => (
-                <a
-                  key={s}
-                  href="#"
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80 cursor-pointer"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.45)" }}
-                >
-                  {s}
-                </a>
-              ))}
+              <span
+                style={{
+                  fontFamily: "var(--font-bricolage)",
+                  fontWeight: 700,
+                  fontSize: "17px",
+                  letterSpacing: "-0.3px",
+                  color: "oklch(0.80 0.01 255)",
+                }}
+              >
+                Skillify
+              </span>
             </div>
+            <p style={{ fontSize: "14px", color: "oklch(0.50 0.01 255)", marginTop: "10px", maxWidth: "260px", lineHeight: 1.7 }}>
+              AI-powered personalized learning. Any skill, any level, built in seconds. The personal curriculum engine for the self-directed learner.
+            </p>
           </div>
 
-          {/* Links */}
-          {Object.entries(links).map(([section, items]) => (
-            <div key={section}>
-              <p className="font-semibold text-white text-xs uppercase tracking-widest mb-5 opacity-50">{section}</p>
-              <ul className="flex flex-col gap-3">
-                {items.map((item) => (
-                  <li key={item}>
-                    <Link
-                      href="#"
-                      className="text-sm transition-colors cursor-pointer hover:text-white"
-                      style={{ color: "rgba(255,255,255,0.40)" }}
-                    >
-                      {item}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          {/* Product */}
+          <div>
+            <h4 style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", color: "oklch(0.50 0.01 255)", marginBottom: "14px" }}>
+              Product
+            </h4>
+            {["How It Works", "Features", "Pricing", "Changelog"].map((item) => (
+              <a
+                key={item}
+                href="#"
+                style={{ display: "block", fontSize: "14px", color: "oklch(0.55 0.01 255)", marginBottom: "9px", transition: "color 0.2s" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(0.80 0.01 255)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(0.55 0.01 255)"; }}
+              >
+                {item}
+              </a>
+            ))}
+          </div>
+
+          {/* Company */}
+          <div>
+            <h4 style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", color: "oklch(0.50 0.01 255)", marginBottom: "14px" }}>
+              Company
+            </h4>
+            {["About", "Blog", "Careers", "Contact"].map((item) => (
+              <a
+                key={item}
+                href="#"
+                style={{ display: "block", fontSize: "14px", color: "oklch(0.55 0.01 255)", marginBottom: "9px", transition: "color 0.2s" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(0.80 0.01 255)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(0.55 0.01 255)"; }}
+              >
+                {item}
+              </a>
+            ))}
+          </div>
+
+          {/* Legal */}
+          <div>
+            <h4 style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", color: "oklch(0.50 0.01 255)", marginBottom: "14px" }}>
+              Legal
+            </h4>
+            <Link href="/privacy" style={{ display: "block", fontSize: "14px", color: "oklch(0.55 0.01 255)", marginBottom: "9px", transition: "color 0.2s" }}>
+              Privacy Policy
+            </Link>
+            <Link href="/terms" style={{ display: "block", fontSize: "14px", color: "oklch(0.55 0.01 255)", marginBottom: "9px", transition: "color 0.2s" }}>
+              Terms of Service
+            </Link>
+            <a href="#" style={{ display: "block", fontSize: "14px", color: "oklch(0.55 0.01 255)", marginBottom: "9px", transition: "color 0.2s" }}>
+              Cookie Policy
+            </a>
+          </div>
         </div>
 
         <div
-          className="border-t pt-8 flex flex-col sm:flex-row items-center justify-between gap-4"
-          style={{ borderColor: "rgba(255,255,255,0.07)" }}
+          style={{
+            borderTop: "1px solid oklch(1 0 0 / 0.06)",
+            paddingTop: "24px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
         >
-          <p className="text-sm" style={{ color: "rgba(255,255,255,0.30)" }}>
-            © {new Date().getFullYear()} Skillify. All rights reserved.
-          </p>
-          <p className="text-sm" style={{ color: "rgba(255,255,255,0.30)" }}>
-            Built with AI · Powered by curiosity
-          </p>
+          <span style={{ fontSize: "13px", color: "oklch(0.40 0.01 255)" }}>
+            © 2026 Skillify Inc. All rights reserved.
+          </span>
+          <div style={{ display: "flex", gap: "20px" }}>
+            <Link href="/privacy" style={{ fontSize: "13px", color: "oklch(0.40 0.01 255)", transition: "color 0.2s" }}>Privacy</Link>
+            <Link href="/terms" style={{ fontSize: "13px", color: "oklch(0.40 0.01 255)", transition: "color 0.2s" }}>Terms</Link>
+            <a href="#" style={{ fontSize: "13px", color: "oklch(0.40 0.01 255)", transition: "color 0.2s" }}>Cookies</a>
+          </div>
         </div>
       </div>
     </footer>

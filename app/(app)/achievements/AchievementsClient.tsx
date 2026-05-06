@@ -1,8 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Zap, Flame, BookOpen, Trophy, Lock, CheckCircle, Award, Rocket, Star, Target, GraduationCap, Brain, Crown } from "lucide-react";
-import { LEVELS, getCurrentLevel, getNextLevel } from "@/lib/levels";
+import { getCurrentLevel, getNextLevel, LEVELS } from "@/lib/levels";
 
 interface Profile {
   full_name: string | null;
@@ -20,270 +19,206 @@ interface Props {
   progress: ProgressRow[];
 }
 
+const badgeDefs = [
+  { id: "first_lesson",   emoji: "⚡", name: "First Steps",      desc: "Complete your first lesson",     type: "blue",    req: (s: Stats) => s.lessons >= 1 },
+  { id: "first_course",   emoji: "🔥", name: "On Fire",          desc: "Maintain a 3-day streak",         type: "gold",    req: (s: Stats) => s.streak >= 3 },
+  { id: "lessons_10",     emoji: "📚", name: "Dedicated",        desc: "Complete 10 lessons",             type: "blue",    req: (s: Stats) => s.lessons >= 10 },
+  { id: "xp_500",         emoji: "🎖", name: "Power Up",         desc: "Earn 500 XP",                     type: "gold",    req: (s: Stats) => s.xp >= 500 },
+  { id: "streak_7",       emoji: "🗓", name: "Week Warrior",     desc: "Maintain a 7-day streak",         type: "blue",    req: (s: Stats) => s.streak >= 7 },
+  { id: "course_complete",emoji: "🎓", name: "Graduate",         desc: "Complete a full course",          type: "blue",    req: (s: Stats) => s.completed >= 1 },
+  { id: "xp_5000",        emoji: "🏆", name: "XP Legend",        desc: "Earn 5,000 XP",                   type: "gold",    req: (s: Stats) => s.xp >= 5000 },
+  { id: "courses_10",     emoji: "👑", name: "Unstoppable",      desc: "Create 10 courses",               type: "gold",    req: (s: Stats) => s.total >= 10 },
+  { id: "lessons_50",     emoji: "🧠", name: "Knowledge Seeker", desc: "Complete 50 lessons",             type: "blue",    req: (s: Stats) => s.lessons >= 50 },
+  { id: "streak_30",      emoji: "🌟", name: "Monthly Master",   desc: "Maintain a 30-day streak",        type: "gold",    req: (s: Stats) => s.streak >= 30 },
+  { id: "courses_3",      emoji: "🚀", name: "Course Collector", desc: "Create 3 courses",                type: "blue",    req: (s: Stats) => s.total >= 3 },
+  { id: "xp_1000",        emoji: "💎", name: "Diamond Mind",     desc: "Earn 1,000 XP",                   type: "blue",    req: (s: Stats) => s.xp >= 1000 },
+];
+
+interface Stats { xp: number; streak: number; lessons: number; completed: number; total: number }
+
+function getLevel(xp: number): string {
+  if (xp >= 10000) return "Master";
+  if (xp >= 5000) return "Expert";
+  if (xp >= 2500) return "Scholar";
+  if (xp >= 1000) return "Apprentice";
+  return "Beginner";
+}
+
 export default function AchievementsClient({ profile, courses, progress }: Props) {
   const xp = profile?.total_xp ?? 0;
   const streak = profile?.current_streak ?? 0;
-  const lessonsCompleted = progress.length;
-  const coursesCompleted = courses.filter((c) => c.status === "completed").length;
-  const totalCourses = courses.length;
+  const lessons = progress.length;
+  const completed = courses.filter((c) => c.status === "completed").length;
+  const total = courses.length;
+
+  const stats: Stats = { xp, streak, lessons, completed, total };
 
   const currentLevel = getCurrentLevel(xp);
   const nextLevel = getNextLevel(xp);
   const levelPct = nextLevel
-    ? Math.round(((xp - currentLevel.min) / (nextLevel.min - currentLevel.min)) * 100)
+    ? Math.min(100, Math.round(((xp - currentLevel.min) / (nextLevel.min - currentLevel.min)) * 100))
     : 100;
 
-  // Badge definitions
-  const badges = [
-    {
-      id: "first_lesson",
-      icon: BookOpen,
-      label: "First Steps",
-      desc: "Complete your first lesson",
-      color: "from-emerald-400 to-emerald-600",
-      earned: lessonsCompleted >= 1,
-    },
-    {
-      id: "first_course",
-      icon: Trophy,
-      label: "Course Creator",
-      desc: "Create your first course",
-      color: "from-blue-400 to-blue-600",
-      earned: totalCourses >= 1,
-    },
-    {
-      id: "streak_3",
-      icon: Flame,
-      label: "On Fire",
-      desc: "Maintain a 3-day streak",
-      color: "from-orange-400 to-red-500",
-      earned: streak >= 3,
-    },
-    {
-      id: "lessons_10",
-      icon: Star,
-      label: "Dedicated",
-      desc: "Complete 10 lessons",
-      color: "from-amber-400 to-amber-500",
-      earned: lessonsCompleted >= 10,
-    },
-    {
-      id: "xp_500",
-      icon: Zap,
-      label: "Power Up",
-      desc: "Earn 500 XP",
-      color: "from-violet-400 to-violet-600",
-      earned: xp >= 500,
-    },
-    {
-      id: "streak_7",
-      icon: Target,
-      label: "Week Warrior",
-      desc: "Maintain a 7-day streak",
-      color: "from-rose-400 to-pink-600",
-      earned: streak >= 7,
-    },
-    {
-      id: "courses_3",
-      icon: Rocket,
-      label: "Course Collector",
-      desc: "Create 3 courses",
-      color: "from-sky-400 to-blue-600",
-      earned: totalCourses >= 3,
-    },
-    {
-      id: "course_complete",
-      icon: GraduationCap,
-      label: "Graduate",
-      desc: "Complete a full course",
-      color: "from-teal-400 to-emerald-600",
-      earned: coursesCompleted >= 1,
-    },
-    {
-      id: "lessons_50",
-      icon: Brain,
-      label: "Knowledge Seeker",
-      desc: "Complete 50 lessons",
-      color: "from-purple-400 to-violet-600",
-      earned: lessonsCompleted >= 50,
-    },
-    {
-      id: "xp_5000",
-      icon: Crown,
-      label: "XP Legend",
-      desc: "Earn 5,000 XP",
-      color: "from-yellow-400 to-orange-500",
-      earned: xp >= 5000,
-    },
-    {
-      id: "streak_30",
-      icon: Award,
-      label: "Monthly Master",
-      desc: "Maintain a 30-day streak",
-      color: "from-indigo-400 to-purple-600",
-      earned: streak >= 30,
-    },
-    {
-      id: "courses_10",
-      icon: Trophy,
-      label: "Unstoppable",
-      desc: "Create 10 courses",
-      color: "from-rose-500 to-purple-600",
-      earned: totalCourses >= 10,
-    },
-  ];
-
+  const badges = badgeDefs.map((b) => ({ ...b, earned: b.req(stats) }));
   const earnedCount = badges.filter((b) => b.earned).length;
-  const CurrentLevelIcon = currentLevel.icon;
+
+  const panel: React.CSSProperties = {
+    background: "var(--card)",
+    border: "1px solid var(--border)",
+    borderRadius: "var(--radius-xl)",
+    padding: "18px",
+  };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-        <h1 className="font-heading text-2xl font-extrabold text-foreground">Achievements</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{earnedCount}/{badges.length} badges earned</p>
-      </motion.div>
-
-      {/* Level card */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
-        className={`rounded-3xl p-7 mb-6 bg-gradient-to-br ${currentLevel.color} text-white shadow-xl`}
-      >
-        <div className="flex items-center gap-5">
-          <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
-            <CurrentLevelIcon className="w-8 h-8 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white/70 text-sm mb-0.5">Current Level</p>
-            <h2 className="font-heading text-2xl font-extrabold mb-3">{currentLevel.name}</h2>
-            {nextLevel ? (
-              <>
-                <div className="flex items-center justify-between text-sm mb-1.5">
-                  <span className="text-white/70">{xp.toLocaleString()} XP</span>
-                  <span className="font-bold">{levelPct}% → {nextLevel.name}</span>
-                </div>
-                <div className="h-2 bg-white/20 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-white rounded-full transition-all duration-700"
-                    style={{ width: `${levelPct}%` }}
-                  />
-                </div>
-                <p className="text-white/60 text-xs mt-1.5">
-                  {(nextLevel.min - xp).toLocaleString()} XP to {nextLevel.name}
-                </p>
-              </>
-            ) : (
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4" />
-                <span className="text-sm font-medium">Max level reached! 🎉</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </motion.div>
+    <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+      {/* Page header */}
+      <div style={{ marginBottom: "22px" }}>
+        <h1 style={{ fontFamily: "var(--font-bricolage)", fontSize: "24px", fontWeight: 800, letterSpacing: "-0.5px", marginBottom: "4px" }}>
+          Achievements
+        </h1>
+        <p style={{ fontSize: "14px", color: "var(--muted-foreground)" }}>
+          {earnedCount}/{badges.length} badges earned
+        </p>
+      </div>
 
       {/* Stats row */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8"
-      >
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px", marginBottom: "22px" }}>
         {[
-          { label: "Total XP", value: xp.toLocaleString(), icon: Zap, color: "text-primary bg-primary/10" },
-          { label: "Day Streak", value: streak, icon: Flame, color: "text-rose-600 bg-rose-50" },
-          { label: "Lessons Done", value: lessonsCompleted, icon: BookOpen, color: "text-emerald-600 bg-emerald-50" },
-          { label: "Courses Done", value: coursesCompleted, icon: Trophy, color: "text-violet-600 bg-violet-50" },
-        ].map((stat, i) => (
-          <div key={i} className="glass-card rounded-2xl p-4 border border-primary/10">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${stat.color}`}>
-              <stat.icon className="w-4 h-4" />
+          { icon: "⚡", bg: "var(--blue-muted)", val: xp.toLocaleString("en-US"), lbl: "Total XP" },
+          { icon: "🔥", bg: "var(--gold-muted)", val: streak, lbl: "Day Streak" },
+          { icon: "📚", bg: "var(--emerald-muted)", val: lessons, lbl: "Lessons Done" },
+          { icon: "🎓", bg: "var(--rose-muted, oklch(0.65 0.18 10 / 0.16))", val: completed, lbl: "Courses Complete" },
+        ].map((s, i) => (
+          <div key={i} style={{ ...panel, transition: "border-color 0.2s, transform 0.2s" }}
+            onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "var(--blue-border)"; el.style.transform = "translateY(-2px)"; }}
+            onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "var(--border)"; el.style.transform = "translateY(0)"; }}
+          >
+            <div style={{ width: "36px", height: "36px", borderRadius: "10px", display: "grid", placeItems: "center", fontSize: "16px", background: s.bg, marginBottom: "10px" }}>
+              {s.icon}
             </div>
-            <p className="font-heading text-xl font-extrabold text-foreground">{stat.value}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
+            <div style={{ fontFamily: "var(--font-bricolage)", fontSize: "28px", fontWeight: 800, letterSpacing: "-1px", marginBottom: "2px" }}>{s.val}</div>
+            <div style={{ fontSize: "12px", color: "var(--muted-foreground)" }}>{s.lbl}</div>
           </div>
         ))}
-      </motion.div>
+      </div>
+
+      {/* Level card */}
+      <div style={{ ...panel, marginBottom: "22px", background: "var(--gold-muted)", border: "1px solid var(--gold-border)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div style={{
+            width: "56px", height: "56px", borderRadius: "16px",
+            background: "oklch(0.76 0.16 75 / 0.3)", border: "2px solid var(--gold-border)",
+            display: "grid", placeItems: "center", fontSize: "24px", flexShrink: 0,
+          }}>
+            🎓
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: "var(--font-bricolage)", fontSize: "18px", fontWeight: 800, letterSpacing: "-0.3px", marginBottom: "3px" }}>
+              {currentLevel.name}
+            </div>
+            <div style={{ fontSize: "12px", color: "var(--muted-foreground)", marginBottom: "8px" }}>
+              {xp.toLocaleString("en-US")} XP
+              {nextLevel && ` · ${(nextLevel.min - xp).toLocaleString("en-US")} to ${nextLevel.name}`}
+            </div>
+            <div style={{ height: "6px", borderRadius: "4px", background: "oklch(0.76 0.16 75 / 0.2)" }}>
+              <motion.div
+                style={{ height: "100%", borderRadius: "4px", background: "var(--gold)" }}
+                initial={{ width: 0 }}
+                animate={{ width: `${levelPct}%` }}
+                transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
+              />
+            </div>
+          </div>
+          <div style={{ textAlign: "right", flexShrink: 0 }}>
+            <div style={{ fontSize: "11px", color: "var(--muted-foreground)", marginBottom: "2px" }}>Progress</div>
+            <div style={{ fontFamily: "var(--font-bricolage)", fontSize: "18px", fontWeight: 800, color: "var(--gold)" }}>{levelPct}%</div>
+          </div>
+        </div>
+      </div>
 
       {/* Level roadmap */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.12 }}
-        className="glass-card rounded-3xl p-6 mb-8 border border-primary/10"
-      >
-        <h3 className="font-heading font-bold text-foreground mb-5">Level Roadmap</h3>
-        <div className="space-y-3">
+      <div style={{ ...panel, marginBottom: "22px" }}>
+        <div style={{ fontFamily: "var(--font-bricolage)", fontWeight: 700, fontSize: "14px", marginBottom: "12px" }}>Level Roadmap</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           {LEVELS.map((level, i) => {
             const LevelIcon = level.icon;
             const isReached = xp >= level.min;
             const isCurrent = currentLevel.name === level.name;
             return (
-              <div key={i} className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isCurrent ? "bg-primary/8 border border-primary/20" : ""}`}>
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-gradient-to-br ${isReached ? level.color : "from-gray-200 to-gray-300"}`}>
-                  <LevelIcon className="w-4 h-4 text-white" />
+              <div
+                key={i}
+                style={{
+                  display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px",
+                  borderRadius: "var(--radius-lg)",
+                  background: isCurrent ? "var(--blue-muted)" : "transparent",
+                  border: `1px solid ${isCurrent ? "var(--blue-border)" : "transparent"}`,
+                }}
+              >
+                <div style={{
+                  width: "30px", height: "30px", borderRadius: "9px", display: "grid", placeItems: "center",
+                  background: isReached ? "var(--blue-muted)" : "var(--muted)",
+                  border: `1px solid ${isReached ? "var(--blue-border)" : "var(--border)"}`,
+                  flexShrink: 0,
+                }}>
+                  <LevelIcon style={{ width: "14px", height: "14px", color: isReached ? "var(--blue)" : "var(--muted-foreground)" }} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-semibold ${isReached ? "text-foreground" : "text-muted-foreground"}`}>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: "13px", fontWeight: 600, color: isReached ? "var(--foreground)" : "var(--muted-foreground)" }}>
                     {level.name}
-                    {isCurrent && <span className="ml-2 text-xs text-primary font-medium">← You are here</span>}
+                    {isCurrent && <span style={{ fontSize: "10px", color: "var(--blue)", marginLeft: "8px", fontWeight: 700 }}>← You are here</span>}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p style={{ fontSize: "11px", color: "var(--muted-foreground)" }}>
                     {level.max === Infinity ? `${level.min.toLocaleString()}+ XP` : `${level.min.toLocaleString()} – ${level.max.toLocaleString()} XP`}
                   </p>
                 </div>
-                {isReached && <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />}
+                {isReached && <span style={{ color: "var(--emerald)", fontSize: "14px" }}>✓</span>}
               </div>
             );
           })}
         </div>
-      </motion.div>
+      </div>
 
-      {/* Badges */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-      >
-        <h3 className="font-heading font-bold text-foreground mb-4">Badges</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {badges.map((badge, i) => {
-            const BadgeIcon = badge.icon;
-            return (
-              <motion.div
-                key={badge.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.15 + i * 0.03 }}
-                className={`glass-card rounded-2xl p-4 text-center border transition-all ${
-                  badge.earned
-                    ? "border-primary/20 hover:border-primary/40 hover:shadow-md hover:shadow-primary/8"
-                    : "border-primary/5 opacity-50"
-                }`}
-              >
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 bg-gradient-to-br ${badge.earned ? badge.color : "from-gray-200 to-gray-300"}`}>
-                  {badge.earned ? (
-                    <BadgeIcon className="w-6 h-6 text-white" />
-                  ) : (
-                    <Lock className="w-5 h-5 text-gray-400" />
-                  )}
-                </div>
-                <p className={`text-sm font-semibold mb-1 ${badge.earned ? "text-foreground" : "text-muted-foreground"}`}>
-                  {badge.label}
-                </p>
-                <p className="text-xs text-muted-foreground leading-tight">{badge.desc}</p>
-                {badge.earned && (
-                  <div className="mt-2 inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
-                    <CheckCircle className="w-3 h-3" /> Earned
-                  </div>
-                )}
-              </motion.div>
-            );
-          })}
+      {/* Badge grid */}
+      <div>
+        <h3 style={{ fontFamily: "var(--font-bricolage)", fontWeight: 700, fontSize: "15px", marginBottom: "14px" }}>Badges</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px" }}>
+          {badges.map((badge, i) => (
+            <motion.div
+              key={badge.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.04 + i * 0.03 }}
+              style={{
+                background: badge.earned ? (badge.type === "gold" ? "var(--gold-muted)" : "var(--card)") : "var(--background)",
+                border: `1px solid ${badge.earned ? (badge.type === "gold" ? "var(--gold-border)" : "var(--blue-border)") : "var(--border)"}`,
+                borderRadius: "var(--radius-xl)",
+                padding: "16px 10px",
+                textAlign: "center",
+                opacity: badge.earned ? 1 : 0.35,
+                filter: badge.earned ? "none" : "grayscale(0.8)",
+                transition: "border-color 0.2s, transform 0.2s",
+                cursor: "default",
+              }}
+              onMouseEnter={(e) => {
+                if (!badge.earned) return;
+                const el = e.currentTarget as HTMLElement;
+                el.style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.transform = "translateY(0)";
+              }}
+            >
+              <div style={{ fontSize: "28px", marginBottom: "8px" }}>{badge.emoji}</div>
+              <div style={{ fontSize: "12px", fontWeight: 700, marginBottom: "3px" }}>{badge.name}</div>
+              <div style={{ fontSize: "10px", color: "var(--muted-foreground)", lineHeight: 1.4 }}>{badge.desc}</div>
+              {badge.earned && (
+                <div style={{ fontSize: "10px", color: "var(--gold)", marginTop: "4px", fontWeight: 600 }}>Earned ✓</div>
+              )}
+            </motion.div>
+          ))}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

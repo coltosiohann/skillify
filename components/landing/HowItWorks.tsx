@@ -2,124 +2,159 @@
 
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import { MessageSquare, Cpu, BookOpen, Trophy } from "lucide-react";
 
 const steps = [
   {
-    icon: MessageSquare,
-    step: "01",
-    title: "Tell Us Your Goal",
-    desc: "Enter any skill — Python, chess, Spanish, guitar. Add your timeline and daily availability.",
-    accent: "#5B4CF5",
-    glow: "rgba(91,76,245,0.25)",
-    bg: "rgba(91,76,245,0.10)",
+    num: "01",
+    title: "Tell us your goal",
+    desc: "Type the skill you want to learn — anything from Python to chess to financial modeling. Add your level and timeline.",
   },
   {
-    icon: Cpu,
-    step: "02",
-    title: "AI Builds Your Path",
-    desc: "Our AI generates a structured course with modules, lessons, and curated resources in under 30 seconds.",
-    accent: "#6366F1",
-    glow: "rgba(99,102,241,0.25)",
-    bg: "rgba(99,102,241,0.10)",
+    num: "02",
+    title: "AI builds your path",
+    desc: "Claude analyzes your input and generates a fully structured curriculum — modules, lessons, and learning objectives.",
   },
   {
-    icon: BookOpen,
-    step: "03",
-    title: "Learn at Your Pace",
-    desc: "Follow your personalized roadmap. Complete lessons, take quizzes, and watch your progress grow.",
-    accent: "#059669",
-    glow: "rgba(5,150,105,0.25)",
-    bg: "rgba(5,150,105,0.10)",
+    num: "03",
+    title: "Learn at your pace",
+    desc: "Work through rich AI-generated lessons with examples, code, quizzes, and curated resources. On any device.",
   },
   {
-    icon: Trophy,
-    step: "04",
-    title: "Level Up & Certify",
-    desc: "Earn XP, beat Boss Battle challenges, and get your completion certificate when you master the skill.",
-    accent: "#D97706",
-    glow: "rgba(217,119,6,0.25)",
-    bg: "rgba(217,119,6,0.10)",
+    num: "04",
+    title: "Level up & certify",
+    desc: "Earn XP, unlock badges, maintain your streak, and receive a shareable certificate when you complete the course.",
   },
 ];
 
 export default function HowItWorks() {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const inView = useInView(ref as React.RefObject<Element>, { once: true, margin: "-80px" });
 
   return (
-    <section id="how-it-works" ref={ref} className="relative py-28 px-4 overflow-hidden">
-      {/* Dark gradient background */}
-      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, #0F172A 0%, #1E1B4B 50%, #0F172A 100%)" }} />
-      {/* Decorative orb */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full blur-[120px] pointer-events-none" style={{ background: "rgba(91,76,245,0.12)" }} />
-
-      <div className="relative max-w-6xl mx-auto">
-        {/* Header */}
+    <section
+      id="how-it-works"
+      ref={ref}
+      style={{ padding: "96px 32px", background: "var(--background)" }}
+    >
+      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.55, ease: "easeOut" as const }}
-          className="text-center mb-20"
+          transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold mb-6 border" style={{ background: "rgba(91,76,245,0.15)", borderColor: "rgba(91,76,245,0.30)", color: "#818CF8" }}>
-            How It Works
+          <span
+            style={{
+              display: "inline-block",
+              fontSize: "11px",
+              fontWeight: 700,
+              letterSpacing: "1px",
+              textTransform: "uppercase",
+              color: "var(--blue)",
+              marginBottom: "14px",
+            }}
+          >
+            The Process
           </span>
-          <h2 className="font-heading text-4xl sm:text-5xl font-extrabold text-white mb-5 leading-tight">
-            From Zero to Expert{" "}
-            <span style={{ background: "linear-gradient(135deg, #818CF8, #C4B5FD)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-              in 4 Steps
-            </span>
+          <h2
+            style={{
+              fontFamily: "var(--font-bricolage)",
+              fontSize: "clamp(32px, 3.5vw, 48px)",
+              fontWeight: 800,
+              letterSpacing: "-1.5px",
+              lineHeight: 1.1,
+              marginBottom: "14px",
+              color: "var(--foreground)",
+            }}
+          >
+            From idea to course<br />in four steps.
           </h2>
-          <p className="text-lg max-w-2xl mx-auto" style={{ color: "rgba(255,255,255,0.55)" }}>
-            Build your own personalized course in ~30 seconds. No experience needed.
-          </p>
         </motion.div>
 
-        {/* Steps */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: "2px",
+            marginTop: "56px",
+            position: "relative",
+          }}
+        >
+          {/* Connector line */}
+          <div
+            style={{
+              position: "absolute",
+              top: "28px",
+              left: "12.5%",
+              right: "12.5%",
+              height: "1px",
+              background: "linear-gradient(90deg, transparent, var(--border), var(--border), transparent)",
+              zIndex: 0,
+              pointerEvents: "none",
+            }}
+          />
+
           {steps.map((s, i) => (
-            <motion.div
-              key={s.step}
-              initial={{ opacity: 0, y: 32 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: 0.1 + i * 0.1, ease: "easeOut" as const }}
-              className="relative flex flex-col rounded-2xl p-6 cursor-default group"
+            <div
+              key={s.num}
+              className="group"
               style={{
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                backdropFilter: "blur(12px)",
+                background: "var(--card)",
+                padding: "28px 24px 24px",
+                borderRadius: i === 0 ? "14px 0 0 14px" : i === steps.length - 1 ? "0 14px 14px 0" : "0",
+                border: "1px solid var(--border)",
+                position: "relative",
+                zIndex: 1,
+                transition: "border-color 0.2s, transform 0.2s",
+                cursor: "default",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.borderColor = "var(--blue-border)";
+                (e.currentTarget as HTMLElement).style.transform = "translateY(-3px)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
+                (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
               }}
             >
-              {/* Hover glow */}
-              <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ boxShadow: `0 0 30px ${s.glow}` }} />
-
-              {/* Connector line */}
-              {i < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-11 -right-3 w-6 h-px z-10" style={{ background: "rgba(129,140,248,0.25)" }} />
-              )}
-
-              {/* Step number */}
-              <span
-                className="text-xs font-black mb-4 block"
-                style={{ color: s.accent, letterSpacing: "0.15em" }}
-              >
-                {s.step}
-              </span>
-
-              {/* Icon */}
               <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 flex-shrink-0"
-                style={{ background: s.bg, border: `1px solid ${s.accent}30` }}
+                style={{
+                  width: "42px",
+                  height: "42px",
+                  borderRadius: "12px",
+                  background: "var(--blue-muted)",
+                  border: "1px solid var(--blue-border)",
+                  display: "grid",
+                  placeItems: "center",
+                  fontFamily: "var(--font-bricolage)",
+                  fontSize: "16px",
+                  fontWeight: 800,
+                  color: "var(--blue)",
+                  marginBottom: "18px",
+                }}
               >
-                <s.icon className="w-5 h-5" style={{ color: s.accent }} />
+                {s.num}
               </div>
-
-              <h3 className="font-heading font-bold text-white mb-2 text-base">{s.title}</h3>
-              <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.50)" }}>{s.desc}</p>
-            </motion.div>
+              <h3
+                style={{
+                  fontFamily: "var(--font-bricolage)",
+                  fontSize: "17px",
+                  fontWeight: 700,
+                  marginBottom: "8px",
+                  letterSpacing: "-0.3px",
+                  color: "var(--foreground)",
+                }}
+              >
+                {s.title}
+              </h3>
+              <p style={{ fontSize: "14px", color: "var(--muted-foreground)", lineHeight: 1.65 }}>
+                {s.desc}
+              </p>
+            </div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

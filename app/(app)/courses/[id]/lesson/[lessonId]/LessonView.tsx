@@ -3,24 +3,17 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle,
   ExternalLink,
-  BookOpen,
-  Zap,
-  Clock,
-  Target,
   Bookmark,
   WifiOff,
   PlayCircle,
   FileText,
+  BookOpen,
   Wrench,
   GraduationCap,
+  CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -37,32 +30,19 @@ import { logError } from "@/lib/logger";
 interface Resource {
   type: string;
   title: string;
-  url?: string;         // New format: real direct URL (video = YouTube search, docs = official URL, etc.)
-  search_query?: string; // Legacy format — resolved below
+  url?: string;
+  search_query?: string;
 }
 
-/**
- * Returns the best possible href for a resource.
- * New courses have a real `url`. Legacy DB rows only have `search_query` —
- * those get routed to the most appropriate platform instead of generic Google.
- */
 function resolveResourceHref(r: Resource): string {
-  // New format — real URL provided by AI
   if (r.url && r.url !== "#") return r.url;
-
-  // Legacy fallback — route to the best platform per type
   const q = r.search_query ?? r.title;
   const enc = encodeURIComponent(q);
   switch (r.type) {
-    case "video":
-      return `https://www.youtube.com/results?search_query=${enc}`;
-    case "docs":
-      return `https://www.google.com/search?q=${enc}+official+documentation`;
-    case "tool":
-      return `https://www.google.com/search?q=${enc}+official+site`;
-    case "article":
-    default:
-      return `https://www.google.com/search?q=${enc}`;
+    case "video":   return `https://www.youtube.com/results?search_query=${enc}`;
+    case "docs":    return `https://www.google.com/search?q=${enc}+official+documentation`;
+    case "tool":    return `https://www.google.com/search?q=${enc}+official+site`;
+    default:        return `https://www.google.com/search?q=${enc}`;
   }
 }
 
@@ -95,15 +75,14 @@ interface Props {
   allLessons: LessonNavItem[];
 }
 
-const resourceTypeStyles: Record<string, { badge: string; icon: React.ReactNode; label: string }> = {
-  video:   { badge: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",     icon: <PlayCircle className="w-4 h-4 text-red-500" />,    label: "Video" },
-  article: { badge: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800",   icon: <FileText className="w-4 h-4 text-blue-500" />,     label: "Article" },
-  docs:    { badge: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700", icon: <BookOpen className="w-4 h-4 text-slate-500" />,    label: "Docs" },
-  tool:    { badge: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800", icon: <Wrench className="w-4 h-4 text-amber-500" />,    label: "Tool" },
-  course:  { badge: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-400 dark:border-violet-800", icon: <GraduationCap className="w-4 h-4 text-violet-500" />, label: "Course" },
+const resourceTypeConfig: Record<string, { icon: React.ReactNode; label: string; bg: string; color: string }> = {
+  video:   { icon: <PlayCircle style={{ width: "16px", height: "16px", color: "oklch(0.60 0.20 25)" }} />,   label: "Video",   bg: "oklch(0.60 0.20 25 / 0.12)",  color: "oklch(0.60 0.20 25)" },
+  article: { icon: <FileText   style={{ width: "16px", height: "16px", color: "var(--blue)" }} />,            label: "Article", bg: "var(--blue-muted)",            color: "var(--blue)" },
+  docs:    { icon: <BookOpen   style={{ width: "16px", height: "16px", color: "var(--muted-foreground)" }} />, label: "Docs",    bg: "var(--muted)",                 color: "var(--muted-foreground)" },
+  tool:    { icon: <Wrench     style={{ width: "16px", height: "16px", color: "var(--gold)" }} />,            label: "Tool",    bg: "var(--gold-muted)",            color: "var(--gold)" },
+  course:  { icon: <GraduationCap style={{ width: "16px", height: "16px", color: "oklch(0.72 0.18 290)" }} />, label: "Course", bg: "oklch(0.55 0.2 290 / 0.15)",  color: "oklch(0.72 0.18 290)" },
 };
 
-/** Extract a friendly platform name from a URL for display hints */
 function getPlatformLabel(url: string): string | null {
   try {
     const host = new URL(url).hostname.replace("www.", "");
@@ -121,8 +100,7 @@ function getPlatformLabel(url: string): string | null {
     if (host.includes("npmjs.com")) return "npm";
     if (host.includes("freecodecamp.org")) return "freeCodeCamp";
     if (host.includes("w3schools.com")) return "W3Schools";
-    if (host.includes("google.com")) return null; // hide google search fallback label
-    // For anything else, capitalize the domain root
+    if (host.includes("google.com")) return null;
     const root = host.split(".")[0];
     return root.charAt(0).toUpperCase() + root.slice(1);
   } catch {
@@ -130,77 +108,62 @@ function getPlatformLabel(url: string): string | null {
   }
 }
 
-const difficultyColors: Record<string, string> = {
-  easy: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  standard: "bg-blue-100 text-blue-700 border-blue-200",
-  challenging: "bg-violet-100 text-violet-700 border-violet-200",
-};
-
-// Fallback markdown renderer using react-markdown + remark-gfm
-// Supports headings, lists, code blocks, tables, blockquotes, bold, italic, and more
 function MarkdownRenderer({ content }: { content: string }) {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
       components={{
         h1: ({ children }) => (
-          <h1 className="text-2xl font-extrabold text-foreground mt-6 mb-3 font-heading">{children}</h1>
+          <h1 style={{ fontFamily: "var(--font-bricolage)", fontSize: "24px", fontWeight: 800, letterSpacing: "-0.4px", marginTop: "24px", marginBottom: "12px", color: "var(--foreground)" }}>{children}</h1>
         ),
         h2: ({ children }) => (
-          <h2 className="text-xl font-bold text-foreground mt-6 mb-3">{children}</h2>
+          <h2 style={{ fontFamily: "var(--font-bricolage)", fontSize: "20px", fontWeight: 700, marginTop: "24px", marginBottom: "10px", color: "var(--foreground)" }}>{children}</h2>
         ),
         h3: ({ children }) => (
-          <h3 className="text-lg font-bold text-foreground mt-5 mb-2">{children}</h3>
+          <h3 style={{ fontFamily: "var(--font-bricolage)", fontSize: "18px", fontWeight: 700, letterSpacing: "-0.2px", marginTop: "20px", marginBottom: "8px", color: "var(--foreground)" }}>{children}</h3>
         ),
         p: ({ children }) => (
-          <p className="text-foreground/80 leading-relaxed my-2">{children}</p>
+          <p style={{ marginBottom: "16px", lineHeight: 1.8, fontSize: "16px", color: "var(--foreground)" }}>{children}</p>
         ),
-        ul: ({ children }) => (
-          <ul className="list-none space-y-1.5 my-3">{children}</ul>
-        ),
-        ol: ({ children }) => (
-          <ol className="list-decimal list-inside space-y-1.5 my-3 text-foreground/80">{children}</ol>
-        ),
+        ul: ({ children }) => <ul style={{ margin: "0 0 16px 20px" }}>{children}</ul>,
+        ol: ({ children }) => <ol style={{ listStyle: "decimal", margin: "0 0 16px 20px" }}>{children}</ol>,
         li: ({ children }) => (
-          <li className="flex items-start gap-2 text-foreground/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
-            <span>{children}</span>
-          </li>
+          <li style={{ marginBottom: "5px", fontSize: "15px", color: "var(--foreground)", lineHeight: 1.7 }}>{children}</li>
         ),
         code: ({ className, children, ...props }) => {
           const isBlock = className?.includes("language-");
           return isBlock ? (
-            <pre className="bg-[#0F172A] dark:bg-[#020617] text-slate-100 rounded-2xl p-4 text-sm font-mono overflow-x-auto my-4 leading-relaxed">
+            <pre style={{ background: "oklch(0.07 0.012 255)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: "20px 24px", margin: "18px 0", fontFamily: "'JetBrains Mono','Fira Code','Courier New',monospace", fontSize: "14px", lineHeight: 1.7, overflowX: "auto" }}>
               <code>{children}</code>
             </pre>
           ) : (
-            <code className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-sm font-mono" {...props}>{children}</code>
+            <code style={{ background: "var(--blue-muted)", color: "var(--blue)", padding: "2px 6px", borderRadius: "5px", fontSize: "14px", fontFamily: "monospace" }} {...props}>{children}</code>
           );
         },
         pre: ({ children }) => <>{children}</>,
         blockquote: ({ children }) => (
-          <blockquote className="border-l-4 border-primary/40 pl-4 my-4 text-foreground/70 italic">{children}</blockquote>
+          <blockquote style={{ borderLeft: "4px solid var(--blue-border)", paddingLeft: "16px", margin: "16px 0", color: "var(--muted-foreground)", fontStyle: "italic" }}>{children}</blockquote>
         ),
         table: ({ children }) => (
-          <div className="overflow-x-auto my-4">
-            <table className="w-full text-sm border-collapse">{children}</table>
+          <div style={{ overflowX: "auto", margin: "16px 0" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>{children}</table>
           </div>
         ),
-        thead: ({ children }) => <thead className="bg-primary/5">{children}</thead>,
+        thead: ({ children }) => <thead style={{ background: "var(--muted)" }}>{children}</thead>,
         th: ({ children }) => (
-          <th className="border border-primary/15 px-3 py-2 text-left font-semibold text-foreground">{children}</th>
+          <th style={{ border: "1px solid var(--border)", padding: "8px 12px", textAlign: "left", fontWeight: 600 }}>{children}</th>
         ),
         td: ({ children }) => (
-          <td className="border border-primary/10 px-3 py-2 text-foreground/80">{children}</td>
+          <td style={{ border: "1px solid var(--border)", padding: "8px 12px", color: "var(--foreground)" }}>{children}</td>
         ),
-        strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
-        em: ({ children }) => <em className="italic">{children}</em>,
+        strong: ({ children }) => <strong style={{ fontWeight: 600, color: "var(--foreground)" }}>{children}</strong>,
+        em: ({ children }) => <em style={{ fontStyle: "italic" }}>{children}</em>,
         a: ({ href, children }) => (
-          <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80">{children}</a>
+          <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)", textDecoration: "underline" }}>{children}</a>
         ),
         img: ({ src, alt }) => (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={src} alt={alt ?? ""} className="rounded-xl max-w-full my-4" />
+          <img src={src} alt={alt ?? ""} style={{ borderRadius: "var(--radius-xl)", maxWidth: "100%", margin: "16px 0" }} />
         ),
       }}
     >
@@ -208,8 +171,6 @@ function MarkdownRenderer({ content }: { content: string }) {
     </ReactMarkdown>
   );
 }
-
-
 
 export default function LessonView({
   lesson,
@@ -259,38 +220,23 @@ export default function LessonView({
     }
   }
 
-  // #11 — scroll to top when lesson changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [lesson.id]);
 
-  // #13 — keyboard shortcuts: ArrowLeft = prev, ArrowRight = next
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.key === "ArrowLeft" && prevLessonId) {
-        router.push(`/courses/${courseId}/lesson/${prevLessonId}`);
-      }
-      if (e.key === "ArrowRight" && nextLessonId) {
-        router.push(`/courses/${courseId}/lesson/${nextLessonId}`);
-      }
+      if (e.key === "ArrowLeft" && prevLessonId) router.push(`/courses/${courseId}/lesson/${prevLessonId}`);
+      if (e.key === "ArrowRight" && nextLessonId) router.push(`/courses/${courseId}/lesson/${nextLessonId}`);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [prevLessonId, nextLessonId, courseId, router]);
 
-  const resources = Array.isArray(lesson.resources_json)
-    ? (lesson.resources_json as Resource[])
-    : [];
-
-  const hasStructuredContent =
-    lesson.content_json &&
-    lesson.content_json.sections &&
-    lesson.content_json.sections.length > 0;
-
-  const handleAllSectionsViewed = useCallback(() => {
-    setAllSectionsViewed(true);
-  }, []);
+  const resources = Array.isArray(lesson.resources_json) ? (lesson.resources_json as Resource[]) : [];
+  const hasStructuredContent = lesson.content_json?.sections && lesson.content_json.sections.length > 0;
+  const handleAllSectionsViewed = useCallback(() => setAllSectionsViewed(true), []);
 
   async function markComplete() {
     if (completed || loading) return;
@@ -307,7 +253,6 @@ export default function LessonView({
         .eq("id", userId)
         .single();
 
-      // Streak calculation with freeze support
       const today = new Date().toISOString().split("T")[0];
       const lastActive = (profile as unknown as { last_active_date: string | null })?.last_active_date;
       const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
@@ -322,20 +267,17 @@ export default function LessonView({
       let freezeUpdate: Record<string, unknown> = {};
 
       if (lastActive === today) {
-        // Already active today, keep streak as-is
+        // already active today
       } else if (lastActive === yesterday) {
         newStreak = newStreak + 1;
       } else if (lastActive === twoDaysAgo) {
-        // Missed exactly one day — check if freeze is available this week
         const now = new Date();
         const weekStart = new Date(now);
         weekStart.setDate(now.getDate() - now.getDay());
         weekStart.setHours(0, 0, 0, 0);
         const freezeUsedAt = profileAny.streak_freeze_used_at;
         const freezeUsedThisWeek = freezeUsedAt && new Date(freezeUsedAt) >= weekStart;
-
         if (!freezeUsedThisWeek) {
-          // Auto-apply freeze: keep streak going
           newStreak = newStreak + 1;
           freezeUpdate = {
             streak_freeze_used_at: yesterday,
@@ -349,31 +291,22 @@ export default function LessonView({
         newStreak = 1;
       }
 
-      // Calculate minutes spent on this lesson (capped at 120 min)
       const minutesSpent = Math.min(120, Math.round((Date.now() - lessonStartTime.current) / 60000));
 
-      await supabase
-        .from("profiles")
-        .update({
-          total_xp: (profile?.total_xp ?? 0) + lesson.xp_reward,
-          current_streak: newStreak,
-          last_active_date: today,
-          total_minutes_learned: (profileAny?.total_minutes_learned ?? 0) + minutesSpent,
-          ...freezeUpdate,
-        } as never)
-        .eq("id", userId);
+      await supabase.from("profiles").update({
+        total_xp: (profile?.total_xp ?? 0) + lesson.xp_reward,
+        current_streak: newStreak,
+        last_active_date: today,
+        total_minutes_learned: (profileAny?.total_minutes_learned ?? 0) + minutesSpent,
+        ...freezeUpdate,
+      } as never).eq("id", userId);
 
-      // Course completion check
       const completedIds = new Set(allLessons.filter((l) => l.completed).map((l) => l.id));
       completedIds.add(lesson.id);
       if (completedIds.size === allLessons.length) {
-        await supabase
-          .from("courses")
-          .update({ status: "completed" })
-          .eq("id", courseId);
+        await supabase.from("courses").update({ status: "completed" }).eq("id", courseId);
       }
 
-      // Module completion check
       const moduleCompletedIds = new Set(
         allLessons
           .filter((l) => currentModuleLessonIds.includes(l.id) && (l.completed || l.id === lesson.id))
@@ -383,18 +316,12 @@ export default function LessonView({
 
       setCompleted(true);
 
-      // Milestone celebrations
-      if (newStreak === 7) {
-        toast.success(`🔥 7-day streak! You're on fire!`, { duration: 4000 });
-      } else if (newStreak === 30) {
-        toast.success(`🏆 30-day streak! Incredible dedication!`, { duration: 5000 });
-      } else if (newStreak === 3) {
-        toast.success(`⚡ 3-day streak! Keep it going!`, { duration: 3000 });
-      } else if (lastActive !== today && newStreak > 1) {
-        toast.success(`+${lesson.xp_reward} XP! 🔥 ${newStreak}-day streak!`);
-      } else {
-        toast.success(`+${lesson.xp_reward} XP earned!`);
-      }
+      if (newStreak === 7) toast.success(`🔥 7-day streak! You're on fire!`, { duration: 4000 });
+      else if (newStreak === 30) toast.success(`🏆 30-day streak! Incredible dedication!`, { duration: 5000 });
+      else if (newStreak === 3) toast.success(`⚡ 3-day streak! Keep it going!`, { duration: 3000 });
+      else if (lastActive !== today && newStreak > 1) toast.success(`+${lesson.xp_reward} XP! 🔥 ${newStreak}-day streak!`);
+      else toast.success(`+${lesson.xp_reward} XP earned!`);
+
       router.refresh();
 
       if (isLastInModule) {
@@ -418,276 +345,262 @@ export default function LessonView({
     }
   }
 
+  const panel: React.CSSProperties = {
+    background: "var(--card)",
+    border: "1px solid var(--border)",
+    borderRadius: "var(--radius-xl)",
+  };
+
+  const canComplete = !completed && !loading && !(!!hasStructuredContent && !allSectionsViewed && !initialCompleted);
+
   return (
-    <div className="lg:pr-72">
-      <div className="max-w-3xl mx-auto px-4 py-8">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6 flex-wrap">
-        <Link
-          href="/dashboard"
-          className="hover:text-foreground transition-colors cursor-pointer"
+    <div style={{ paddingRight: "0" }} className="lg:pr-72">
+      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "32px 24px" }}>
+
+        {/* Breadcrumb */}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "var(--muted-foreground)", marginBottom: "20px", flexWrap: "wrap" }}>
+          <Link href="/dashboard" style={{ textDecoration: "none", color: "var(--muted-foreground)", transition: "color 0.15s" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--foreground)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--muted-foreground)"; }}
+          >Dashboard</Link>
+          <span>/</span>
+          <Link href={`/courses/${courseId}`} style={{ textDecoration: "none", color: "var(--muted-foreground)", transition: "color 0.15s" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--foreground)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--muted-foreground)"; }}
+          >{courseTitle}</Link>
+          <span>/</span>
+          <span style={{ color: "var(--foreground)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "260px" }}>{lesson.title}</span>
+        </div>
+
+        {/* Module tag + action row */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--muted-foreground)" }}>
+            <BookOpen style={{ width: "13px", height: "13px" }} />
+            <span>{moduleTitle}</span>
+            <span style={{ color: "var(--border)" }}>·</span>
+            <span>Lesson {currentIndex + 1} of {totalLessons}</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            {completed && (
+              <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", fontWeight: 600, color: "var(--emerald)", background: "var(--emerald-muted)", padding: "4px 10px", borderRadius: "99px" }}>
+                <CheckCircle style={{ width: "12px", height: "12px" }} /> Completed
+              </span>
+            )}
+            <button
+              onClick={toggleBookmark}
+              disabled={bookmarkLoading}
+              aria-label={bookmarked ? "Remove bookmark" : "Bookmark"}
+              style={{
+                width: "32px", height: "32px", borderRadius: "9px", border: "1px solid var(--border)",
+                background: bookmarked ? "var(--blue-muted)" : "var(--card)",
+                display: "grid", placeItems: "center", cursor: "pointer", transition: "border-color 0.2s",
+              }}
+            >
+              <Bookmark style={{ width: "14px", height: "14px", color: bookmarked ? "var(--blue)" : "var(--muted-foreground)", fill: bookmarked ? "var(--blue)" : "none" }} />
+            </button>
+            <button
+              onClick={() => {
+                if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+                  navigator.serviceWorker.controller.postMessage({ type: "CACHE_LESSON", url: window.location.href });
+                  setSavedOffline(true);
+                  toast.success("Lesson saved for offline reading!");
+                } else {
+                  toast("Offline saving not available", { description: "Service worker not active yet. Reload and try again." });
+                }
+              }}
+              aria-label="Save for offline"
+              style={{
+                width: "32px", height: "32px", borderRadius: "9px", border: "1px solid var(--border)",
+                background: savedOffline ? "var(--blue-muted)" : "var(--card)",
+                display: "grid", placeItems: "center", cursor: "pointer",
+              }}
+            >
+              <WifiOff style={{ width: "14px", height: "14px", color: savedOffline ? "var(--blue)" : "var(--muted-foreground)" }} />
+            </button>
+          </div>
+        </div>
+
+        {/* Lesson eyebrow */}
+        <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "10px" }}>
+          {moduleTitle} · Lesson {currentIndex + 1} of {totalLessons}
+        </div>
+
+        {/* Title */}
+        <motion.h1
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ fontFamily: "var(--font-bricolage)", fontSize: "32px", fontWeight: 800, letterSpacing: "-0.8px", lineHeight: 1.15, marginBottom: "14px", color: "var(--foreground)" }}
         >
-          Dashboard
-        </Link>
-        <span>/</span>
-        <Link
-          href={`/courses/${courseId}`}
-          className="hover:text-foreground transition-colors cursor-pointer"
-        >
-          {courseTitle}
-        </Link>
-        <span>/</span>
-        <span className="text-foreground font-medium truncate">
           {lesson.title}
-        </span>
-      </div>
+        </motion.h1>
 
-      {/* Module badge + metadata */}
-      <div className="flex items-center gap-2 mb-4 flex-wrap">
-        <BookOpen className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">{moduleTitle}</span>
-        <div className="ml-auto flex items-center gap-2">
+        {/* Meta row */}
+        <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "28px", paddingBottom: "20px", borderBottom: "1px solid var(--border)", flexWrap: "wrap" }}>
           {lesson.estimated_minutes > 0 && (
-            <Badge
-              variant="outline"
-              className="text-xs border-primary/15 gap-1"
-            >
-              <Clock className="w-3 h-3" />
-              {lesson.estimated_minutes} min
-            </Badge>
+            <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", color: "var(--muted-foreground)" }}>
+              ⏱ {lesson.estimated_minutes} min read
+            </span>
           )}
-          {lesson.difficulty && lesson.difficulty !== "standard" && (
-            <Badge
-              className={`text-xs border capitalize ${
-                difficultyColors[lesson.difficulty] ?? ""
-              }`}
-            >
-              <Target className="w-3 h-3 mr-1" />
-              {lesson.difficulty}
-            </Badge>
-          )}
-          {completed && (
-            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
-              <CheckCircle className="w-3 h-3 mr-1" /> Completed
-            </Badge>
-          )}
-          <button
-            onClick={toggleBookmark}
-            disabled={bookmarkLoading}
-            aria-label={bookmarked ? "Remove bookmark" : "Bookmark this lesson"}
-            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
-              bookmarked
-                ? "bg-primary/10 text-primary hover:bg-primary/15"
-                : "hover:bg-primary/8 text-muted-foreground hover:text-primary"
-            } disabled:opacity-50`}
-          >
-            <Bookmark className={`w-4 h-4 ${bookmarked ? "fill-current" : ""}`} />
-          </button>
-          <button
-            onClick={() => {
-              if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
-                navigator.serviceWorker.controller.postMessage({
-                  type: "CACHE_LESSON",
-                  url: window.location.href,
-                });
-                setSavedOffline(true);
-                toast.success("Lesson saved for offline reading!");
-              } else {
-                toast("Offline saving not available", { description: "Service worker not active yet. Reload and try again." });
-              }
-            }}
-            aria-label="Save for offline reading"
-            title="Save for offline"
-            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
-              savedOffline
-                ? "bg-sky-100 text-sky-600 dark:bg-sky-900/30"
-                : "hover:bg-primary/8 text-muted-foreground hover:text-sky-600"
-            }`}
-          >
-            <WifiOff className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Title */}
-      <motion.h1
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="font-heading text-3xl font-extrabold text-foreground mb-2"
-      >
-        {lesson.title}
-      </motion.h1>
-      <div className="flex items-center gap-2 mb-8 text-sm text-amber-600">
-        <Zap className="w-4 h-4" />
-        <span className="font-medium">{lesson.xp_reward} XP on completion</span>
-      </div>
-
-      {/* Content — structured or legacy */}
-      {hasStructuredContent ? (
-        <LessonStepper
-          content={lesson.content_json!}
-          onAllSectionsViewed={handleAllSectionsViewed}
-        />
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="glass-card rounded-3xl p-8 mb-6 shadow-lg shadow-primary/5"
-        >
-          <div className="prose max-w-none">
-            <MarkdownRenderer content={lesson.content_markdown} />
-          </div>
-        </motion.div>
-      )}
-
-      {/* Resources */}
-      {resources.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="glass-card rounded-3xl p-6 mb-6 shadow-lg shadow-primary/5"
-        >
-          <h3 className="font-heading font-bold text-foreground mb-4">
-            Further Reading
-          </h3>
-          <div className="space-y-2.5">
-            {resources.map((r, i) => {
-              const href = resolveResourceHref(r);
-              const style = resourceTypeStyles[r.type] ?? {
-                badge: "bg-gray-100 text-gray-700 border-gray-200",
-                icon: <ExternalLink className="w-4 h-4 text-gray-500" />,
-                label: r.type,
-              };
-              const platform = getPlatformLabel(href);
-              return (
-                <a
-                  key={i}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-3.5 rounded-xl border border-primary/10 hover:border-primary/30 hover:bg-primary/3 transition-all group cursor-pointer"
-                >
-                  {/* Type icon */}
-                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 group-hover:bg-primary/10 transition-colors">
-                    {style.icon}
-                  </div>
-
-                  {/* Title + platform */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors truncate">
-                      {r.title}
-                    </p>
-                    {platform && (
-                      <p className="text-xs text-muted-foreground mt-0.5">{platform}</p>
-                    )}
-                  </div>
-
-                  {/* Badge + arrow */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <Badge className={`text-xs border capitalize hidden sm:inline-flex ${style.badge}`}>
-                      {style.label}
-                    </Badge>
-                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </div>
-                </a>
-              );
-            })}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Notes */}
-      <LessonNotes lessonId={lesson.id} userId={userId} initialNote={initialNote} />
-
-      {/* Mark Complete */}
-      <div className="mb-8">
-        <Button
-          onClick={markComplete}
-          disabled={completed || loading || (!!hasStructuredContent && !allSectionsViewed && !initialCompleted)}
-          className={`w-full h-12 rounded-xl font-semibold gap-2 cursor-pointer transition-all ${
-            completed
-              ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/25"
-              : "bg-primary hover:bg-[#4338CA] text-white shadow-md shadow-primary/25"
-          } disabled:opacity-60`}
-        >
-          {loading ? (
-            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          ) : completed ? (
-            <>
-              <CheckCircle className="w-4 h-4" /> Completed!
-            </>
-          ) : hasStructuredContent && !allSectionsViewed ? (
-            <>Complete all sections to finish</>
-          ) : (
-            <>
-              <CheckCircle className="w-4 h-4" /> Mark as Complete
-            </>
-          )}
-        </Button>
-      </div>
-
-      {/* Navigation bar */}
-      <div className="flex items-center gap-3 border-t border-primary/8 pt-6">
-        {prevLessonId ? (
-          <Link href={`/courses/${courseId}/lesson/${prevLessonId}`}>
-            <Button
-              variant="outline"
-              className="gap-2 rounded-xl border-primary/15 hover:bg-primary/5 cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" /> Previous
-            </Button>
-          </Link>
-        ) : (
-          <Link href={`/courses/${courseId}`}>
-            <Button
-              variant="outline"
-              className="gap-2 rounded-xl border-primary/15 hover:bg-primary/5 cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" /> Course
-            </Button>
-          </Link>
-        )}
-
-        <div className="flex-1 text-center">
-          <span className="text-sm text-muted-foreground">
-            Lesson {currentIndex + 1} of {totalLessons}
+          <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", color: "var(--muted-foreground)" }}>
+            ⚡ +{lesson.xp_reward} XP
           </span>
+          {lesson.difficulty && lesson.difficulty !== "standard" && (
+            <span style={{
+              fontSize: "11px", fontWeight: 600, padding: "3px 9px", borderRadius: "99px", textTransform: "capitalize",
+              background: lesson.difficulty === "easy" ? "var(--emerald-muted)" : lesson.difficulty === "challenging" ? "oklch(0.55 0.2 290 / 0.15)" : "var(--blue-muted)",
+              color: lesson.difficulty === "easy" ? "var(--emerald)" : lesson.difficulty === "challenging" ? "oklch(0.72 0.18 290)" : "var(--blue)",
+            }}>
+              {lesson.difficulty}
+            </span>
+          )}
         </div>
 
-        {nextLessonId ? (
-          <Link href={`/courses/${courseId}/lesson/${nextLessonId}`}>
-            <Button
-              className={`gap-2 rounded-xl cursor-pointer ${
-                completed
-                  ? "bg-primary hover:bg-[#4338CA] text-white shadow-md shadow-primary/25 animate-pulse"
-                  : "bg-primary/10 text-primary hover:bg-primary/20"
-              }`}
-            >
-              Next <ArrowRight className="w-4 h-4" />
-            </Button>
-          </Link>
+        {/* Content */}
+        {hasStructuredContent ? (
+          <LessonStepper content={lesson.content_json!} onAllSectionsViewed={handleAllSectionsViewed} />
         ) : (
-          <Link href={`/courses/${courseId}`}>
-            <Button
-              variant="outline"
-              className="gap-2 rounded-xl border-primary/15 hover:bg-primary/5 cursor-pointer"
-            >
-              Back to Course
-            </Button>
-          </Link>
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            style={{ ...panel, padding: "32px", marginBottom: "20px" }}
+          >
+            <MarkdownRenderer content={lesson.content_markdown} />
+          </motion.div>
         )}
-      </div>
+
+        {/* Resources */}
+        {resources.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            style={{ ...panel, padding: "24px", marginBottom: "20px" }}
+          >
+            <h3 style={{ fontFamily: "var(--font-bricolage)", fontWeight: 700, fontSize: "15px", marginBottom: "14px" }}>Further Reading</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {resources.map((r, i) => {
+                const href = resolveResourceHref(r);
+                const cfg = resourceTypeConfig[r.type] ?? {
+                  icon: <ExternalLink style={{ width: "16px", height: "16px", color: "var(--muted-foreground)" }} />,
+                  label: r.type, bg: "var(--muted)", color: "var(--muted-foreground)",
+                };
+                const platform = getPlatformLabel(href);
+                return (
+                  <a
+                    key={i}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "flex", alignItems: "center", gap: "12px",
+                      padding: "12px 14px", borderRadius: "var(--radius-lg)",
+                      border: "1px solid var(--border)", textDecoration: "none",
+                      transition: "border-color 0.2s, background 0.2s",
+                    }}
+                    onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "var(--blue-border)"; el.style.background = "var(--blue-muted)"; }}
+                    onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "var(--border)"; el.style.background = "transparent"; }}
+                  >
+                    <div style={{ width: "32px", height: "32px", borderRadius: "9px", background: cfg.bg, display: "grid", placeItems: "center", flexShrink: 0 }}>
+                      {cfg.icon}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "13px", fontWeight: 500, color: "var(--foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title}</div>
+                      {platform && <div style={{ fontSize: "11px", color: "var(--muted-foreground)", marginTop: "1px" }}>{platform}</div>}
+                    </div>
+                    <span style={{ fontSize: "10px", fontWeight: 700, padding: "3px 8px", borderRadius: "99px", background: cfg.bg, color: cfg.color, flexShrink: 0, textTransform: "capitalize" }}>
+                      {cfg.label}
+                    </span>
+                    <ExternalLink style={{ width: "13px", height: "13px", color: "var(--muted-foreground)", flexShrink: 0 }} />
+                  </a>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Notes */}
+        <LessonNotes lessonId={lesson.id} userId={userId} initialNote={initialNote} />
+
+        {/* Mark Complete */}
+        <div style={{ marginBottom: "28px" }}>
+          <button
+            onClick={markComplete}
+            disabled={!canComplete}
+            style={{
+              width: "100%", height: "48px", borderRadius: "12px",
+              fontSize: "14px", fontWeight: 600, fontFamily: "inherit",
+              border: "none", cursor: canComplete ? "pointer" : "default",
+              background: completed ? "var(--emerald)" : canComplete ? "var(--blue)" : "var(--muted)",
+              color: (completed || canComplete) ? "#fff" : "var(--muted-foreground)",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+              transition: "background 0.2s", opacity: !canComplete && !completed ? 0.6 : 1,
+            }}
+            onMouseEnter={(e) => {
+              if (!canComplete) return;
+              (e.currentTarget as HTMLElement).style.background = completed ? "var(--emerald)" : "var(--blue-hover)";
+            }}
+            onMouseLeave={(e) => {
+              if (!canComplete) return;
+              (e.currentTarget as HTMLElement).style.background = completed ? "var(--emerald)" : "var(--blue)";
+            }}
+          >
+            {loading ? (
+              <span style={{ width: "16px", height: "16px", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "spin 0.7s linear infinite" }} />
+            ) : completed ? (
+              <><CheckCircle style={{ width: "16px", height: "16px" }} /> Completed!</>
+            ) : hasStructuredContent && !allSectionsViewed ? (
+              "Complete all sections to finish"
+            ) : (
+              <><CheckCircle style={{ width: "16px", height: "16px" }} /> Mark as Complete &amp; Continue</>
+            )}
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", borderTop: "1px solid var(--border)", paddingTop: "24px" }}>
+          <Link href={prevLessonId ? `/courses/${courseId}/lesson/${prevLessonId}` : `/courses/${courseId}`} style={{ textDecoration: "none" }}>
+            <button style={{
+              display: "flex", alignItems: "center", gap: "6px",
+              padding: "9px 16px", borderRadius: "10px",
+              fontSize: "13px", fontWeight: 600, fontFamily: "inherit",
+              background: "var(--card)", border: "1px solid var(--border)",
+              color: "var(--foreground)", cursor: "pointer", transition: "border-color 0.2s",
+            }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--blue-border)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; }}
+            >
+              ← {prevLessonId ? "Previous" : "Course"}
+            </button>
+          </Link>
+          <div style={{ flex: 1, textAlign: "center", fontSize: "13px", color: "var(--muted-foreground)" }}>
+            {currentIndex + 1} / {totalLessons}
+          </div>
+          <Link href={nextLessonId ? `/courses/${courseId}/lesson/${nextLessonId}` : `/courses/${courseId}`} style={{ textDecoration: "none" }}>
+            <button style={{
+              display: "flex", alignItems: "center", gap: "6px",
+              padding: "9px 16px", borderRadius: "10px",
+              fontSize: "13px", fontWeight: 600, fontFamily: "inherit",
+              background: completed && nextLessonId ? "var(--blue)" : "var(--card)",
+              border: `1px solid ${completed && nextLessonId ? "transparent" : "var(--border)"}`,
+              color: completed && nextLessonId ? "#fff" : "var(--foreground)",
+              cursor: "pointer", transition: "background 0.2s, border-color 0.2s",
+            }}
+              onMouseEnter={(e) => {
+                if (!(completed && nextLessonId)) (e.currentTarget as HTMLElement).style.borderColor = "var(--blue-border)";
+              }}
+              onMouseLeave={(e) => {
+                if (!(completed && nextLessonId)) (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
+              }}
+            >
+              {nextLessonId ? "Next →" : "Back to Course"}
+            </button>
+          </Link>
+        </div>
 
       </div>
 
-      {/* Progress panel — fixed sidebar, outside the constrained width div */}
-      <LessonProgressPanel
-        lessons={allLessons}
-        currentLessonId={lesson.id}
-        courseId={courseId}
-      />
+      <LessonProgressPanel lessons={allLessons} currentLessonId={lesson.id} courseId={courseId} />
     </div>
   );
 }

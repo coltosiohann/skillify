@@ -7,8 +7,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-nunito);
-  --font-heading: var(--font-outfit);
+  --font-sans: var(--font-dm-sans);
+  --font-heading: var(--font-bricolage);
   --font-mono: var(--font-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -44,105 +44,139 @@
 
   /* Skillify semantic colors */
   --color-brand: var(--brand);
-  --color-brand-dark: var(--brand-dark);
-  --color-brand-light: var(--brand-light);
   --color-xp: var(--xp);
   --color-success: var(--success);
   --color-streak: var(--streak);
 }
 
+/* ─── Design Tokens ────────────────────────────────────────────────────────── */
+:root {
+  /* Electric Blue — primary accent */
+  --blue:          oklch(0.53 0.23 256);
+  --blue-hover:    oklch(0.47 0.23 256);
+  --blue-muted:    oklch(0.53 0.23 256 / 0.13);
+  --blue-border:   oklch(0.53 0.23 256 / 0.32);
+
+  /* Gamification */
+  --gold:          oklch(0.76 0.16 75);
+  --gold-muted:    oklch(0.76 0.16 75 / 0.16);
+  --gold-border:   oklch(0.76 0.16 75 / 0.32);
+  --emerald:       oklch(0.63 0.15 162);
+  --emerald-muted: oklch(0.63 0.15 162 / 0.16);
+  --emerald-border:oklch(0.63 0.15 162 / 0.32);
+  --rose:          oklch(0.65 0.18 10);
+  --rose-muted:    oklch(0.65 0.18 10 / 0.16);
+
+  /* Fonts */
+  --fd: var(--font-bricolage), 'Bricolage Grotesque', sans-serif;
+  --fb: var(--font-dm-sans), 'DM Sans', sans-serif;
+
+  /* Easing */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 /* ─── Light Mode ──────────────────────────────────────────────────────────── */
 :root {
-  /* Backgrounds — subtle warm-white, cards pop cleanly above */
-  --background: #F7F8FC;
-  --foreground: #0F172A;        /* slate-900 — 19.5:1 on bg ✓ WCAG AAA */
+  --background:   oklch(0.985 0.004 255);
+  --foreground:   oklch(0.13 0.012 255);
 
-  /* Cards — pure white for clear elevation over background */
-  --card: #FFFFFF;
-  --card-foreground: #0F172A;
-  --popover: #FFFFFF;
-  --popover-foreground: #0F172A;
+  --card:         oklch(1 0 0);
+  --card-foreground: oklch(0.13 0.012 255);
+  --popover:      oklch(1 0 0);
+  --popover-foreground: oklch(0.13 0.012 255);
 
-  /* Brand — Indigo-Violet blend, more modern than pure purple */
-  --primary: #5B4CF5;
-  --primary-foreground: #FFFFFF;
-  --brand: #5B4CF5;
-  --brand-dark: #4338CA;
-  --brand-light: #EEF2FF;
+  --primary:      oklch(0.53 0.23 256);
+  --primary-foreground: #ffffff;
+  --brand:        oklch(0.53 0.23 256);
 
-  /* Secondary / Muted */
-  --secondary: #EEF2FF;
-  --secondary-foreground: #312E81;
-  --muted: #F1F5F9;             /* slate-100 */
-  --muted-foreground: #64748B;  /* slate-500 — 5.74:1 on white ✓ WCAG AA */
-  --accent: #EEF2FF;
-  --accent-foreground: #5B4CF5;
+  --secondary:    oklch(0.952 0.008 255);
+  --secondary-foreground: oklch(0.13 0.012 255);
+  --muted:        oklch(0.915 0.012 255);
+  --muted-foreground: oklch(0.40 0.012 255);
+  --accent:       oklch(0.952 0.008 255);
+  --accent-foreground: oklch(0.53 0.23 256);
 
-  /* Utility */
-  --destructive: #EF4444;
-  --border: rgba(91, 76, 245, 0.08);
-  --input: #EEF2FF;
-  --ring: #5B4CF5;
+  --destructive:  oklch(0.577 0.245 27);
+  --border:       oklch(0.855 0.012 255);
+  --input:        oklch(0.952 0.008 255);
+  --ring:         oklch(0.53 0.23 256);
 
-  /* Semantic Game Colors */
-  --xp: #D97706;                /* amber-600 — XP/gold */
-  --success: #059669;           /* emerald-600 — completion */
-  --streak: #E11D48;            /* rose-600 — fire/streak */
+  /* Semantic game colors */
+  --xp:           oklch(0.76 0.16 75);
+  --success:      oklch(0.63 0.15 162);
+  --streak:       oklch(0.65 0.18 10);
 
-  /* Radius — 14px base */
-  --radius: 0.875rem;
+  /* Radius — 12px base */
+  --radius: 0.75rem;
 
-  /* Sidebar — white with the lightest indigo wash */
-  --sidebar: #FFFFFF;
-  --sidebar-foreground: #0F172A;
-  --sidebar-primary: #5B4CF5;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #EEF2FF;
-  --sidebar-accent-foreground: #5B4CF5;
-  --sidebar-border: rgba(91, 76, 245, 0.07);
-  --sidebar-ring: #5B4CF5;
+  /* Sidebar */
+  --sidebar:                  oklch(1 0 0);
+  --sidebar-foreground:       oklch(0.13 0.012 255);
+  --sidebar-primary:          oklch(0.53 0.23 256);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent:           oklch(0.952 0.008 255);
+  --sidebar-accent-foreground: oklch(0.53 0.23 256);
+  --sidebar-border:           oklch(0.855 0.012 255);
+  --sidebar-ring:             oklch(0.53 0.23 256);
+
+  /* Extended bg levels */
+  --bg2: oklch(0.952 0.008 255);
+  --bg3: oklch(0.915 0.012 255);
+  --bd2: oklch(0.910 0.008 255);
+  --tx2: oklch(0.40 0.012 255);
+  --tx3: oklch(0.60 0.010 255);
+  --hover: oklch(0 0 0 / 0.03);
+  --card2: oklch(0.972 0.006 255);
 }
 
 /* ─── Dark Mode ───────────────────────────────────────────────────────────── */
 .dark {
-  /* Slate-based dark — sophisticated, not claustrophobic purple */
-  --background: #0F172A;        /* slate-900 */
-  --foreground: #F1F5F9;        /* slate-100 */
-  --card: #1E293B;              /* slate-800 */
-  --card-foreground: #F1F5F9;
-  --popover: #1E293B;
-  --popover-foreground: #F1F5F9;
+  --background:   oklch(0.085 0.012 255);
+  --foreground:   oklch(0.945 0.005 255);
 
-  --primary: #818CF8;           /* indigo-400 — vibrant on dark */
-  --primary-foreground: #0F172A;
-  --brand: #818CF8;
-  --brand-dark: #6366F1;
-  --brand-light: #1E1B4B;
+  --card:         oklch(0.115 0.016 255);
+  --card-foreground: oklch(0.945 0.005 255);
+  --popover:      oklch(0.115 0.016 255);
+  --popover-foreground: oklch(0.945 0.005 255);
 
-  --secondary: #1E293B;
-  --secondary-foreground: #E2E8F0;
-  --muted: #1E293B;
-  --muted-foreground: #94A3B8;  /* slate-400 — 5.9:1 on card ✓ */
-  --accent: #312E81;
-  --accent-foreground: #818CF8;
+  --primary:      oklch(0.53 0.23 256);
+  --primary-foreground: #ffffff;
+  --brand:        oklch(0.53 0.23 256);
 
-  --destructive: #F87171;
-  --border: rgba(129, 140, 248, 0.12);
-  --input: rgba(129, 140, 248, 0.08);
-  --ring: #818CF8;
+  --secondary:    oklch(0.148 0.018 255);
+  --secondary-foreground: oklch(0.945 0.005 255);
+  --muted:        oklch(0.148 0.018 255);
+  --muted-foreground: oklch(0.68 0.010 255);
+  --accent:       oklch(0.148 0.018 255);
+  --accent-foreground: oklch(0.53 0.23 256);
 
-  --xp: #FBBF24;                /* amber-400 */
-  --success: #34D399;           /* emerald-400 */
-  --streak: #FB7185;            /* rose-400 */
+  --destructive:  oklch(0.704 0.191 22);
+  --border:       oklch(0.215 0.018 255);
+  --input:        oklch(0.148 0.018 255);
+  --ring:         oklch(0.53 0.23 256);
 
-  --sidebar: #0B1120;           /* slightly deeper than bg */
-  --sidebar-foreground: #CBD5E1;
-  --sidebar-primary: #818CF8;
-  --sidebar-primary-foreground: #0F172A;
-  --sidebar-accent: #1E293B;
-  --sidebar-accent-foreground: #818CF8;
-  --sidebar-border: rgba(129, 140, 248, 0.08);
-  --sidebar-ring: #818CF8;
+  --xp:     oklch(0.76 0.16 75);
+  --success: oklch(0.63 0.15 162);
+  --streak:  oklch(0.65 0.18 10);
+
+  --sidebar:                  oklch(0.078 0.012 255);
+  --sidebar-foreground:       oklch(0.68 0.010 255);
+  --sidebar-primary:          oklch(0.53 0.23 256);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent:           oklch(0.148 0.018 255);
+  --sidebar-accent-foreground: oklch(0.53 0.23 256);
+  --sidebar-border:           oklch(0.215 0.018 255);
+  --sidebar-ring:             oklch(0.53 0.23 256);
+
+  /* Extended bg levels */
+  --bg2:  oklch(0.112 0.016 255);
+  --bg3:  oklch(0.148 0.018 255);
+  --bd2:  oklch(0.165 0.016 255);
+  --tx2:  oklch(0.68 0.010 255);
+  --tx3:  oklch(0.46 0.008 255);
+  --hover: oklch(1 0 0 / 0.04);
+  --card2: oklch(0.138 0.018 255);
 }
 
 /* ─── Base ────────────────────────────────────────────────────────────────── */
@@ -152,160 +186,237 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-nunito), var(--font-inter), system-ui, sans-serif;
+    font-family: var(--fb);
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
   }
   html {
-    font-family: var(--font-nunito), var(--font-inter), system-ui, sans-serif;
+    font-family: var(--fb);
+    scroll-behavior: smooth;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-outfit), var(--font-jakarta), sans-serif;
-    line-height: 1.25;
-    font-weight: 700;
+    font-family: var(--fd);
+    line-height: 1.15;
+    font-weight: 800;
+    letter-spacing: -0.03em;
   }
 }
+
+/* ─── Scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
 
 /* ─── Utilities ───────────────────────────────────────────────────────────── */
 @layer utilities {
   .font-heading {
-    font-family: var(--font-outfit), var(--font-jakarta), sans-serif;
+    font-family: var(--fd);
   }
 
-  /* ── Hero glows ── */
-  .hero-glow {
-    background: radial-gradient(ellipse 80% 60% at 50% -10%, #EEF2FF 0%, #F7F8FC 40%, transparent 70%);
-  }
-  .hero-glow-dark {
-    background: radial-gradient(ellipse 80% 60% at 50% -10%, #1E1B4B 0%, #0F172A 40%, transparent 70%);
-  }
-
-  /* ── Card elevation system (3 levels) ── */
-
-  /* Level 0 — Flat: sits on the background, subtle border only */
+  /* ── Card styles ── */
   .card-flat {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: var(--radius-2xl);
+    border-radius: var(--radius-xl);
+    transition: border-color 0.2s;
+  }
+  .card-flat:hover {
+    border-color: var(--blue-border);
   }
 
-  /* Level 1 — Raised: default card, soft shadow */
   .card-raised {
     background: var(--card);
-    border: 1px solid rgba(91, 76, 245, 0.07);
-    border-radius: var(--radius-2xl);
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 16px rgba(91, 76, 245, 0.06);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 1px 3px oklch(0 0 0 / 0.06), 0 4px 16px oklch(0 0 0 / 0.04);
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  }
+  .card-raised:hover {
+    border-color: var(--blue-border);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px oklch(0 0 0 / 0.10);
   }
   .dark .card-raised {
-    border-color: rgba(129, 140, 248, 0.1);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1px 3px oklch(0 0 0 / 0.3), 0 4px 16px oklch(0 0 0 / 0.2);
   }
 
-  /* Level 2 — Floating: modals, dropdowns, highlighted cards */
   .card-floating {
     background: var(--card);
-    border: 1px solid rgba(91, 76, 245, 0.1);
-    border-radius: var(--radius-2xl);
-    box-shadow: 0 4px 6px rgba(15, 23, 42, 0.05), 0 10px 40px rgba(91, 76, 245, 0.10), 0 1px 0 rgba(255,255,255,0.8) inset;
-  }
-  .dark .card-floating {
-    border-color: rgba(129, 140, 248, 0.15);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 10px 40px rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--blue-border);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 0 0 1px var(--blue-border), 0 24px 64px oklch(0.53 0.23 256 / 0.10);
   }
 
-  /* Legacy glass-card — kept for backward compat, now maps to card-raised */
-  .glass-card {
-    background: var(--card);
-    border: 1px solid rgba(91, 76, 245, 0.07);
-    border-radius: var(--radius-2xl);
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 16px rgba(91, 76, 245, 0.06);
+  /* ── Hero backgrounds ── */
+  .hero-dark {
+    background: oklch(0.07 0.015 255);
+    position: relative;
   }
-  .dark .glass-card {
-    background: #1E293B;
-    border-color: rgba(129, 140, 248, 0.1);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.2);
+  .hero-dark::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(oklch(1 0 0 / 0.045) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+    pointer-events: none;
+  }
+  .hero-dark::after {
+    content: '';
+    position: absolute;
+    width: 700px;
+    height: 700px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-20%, -50%);
+    background: radial-gradient(ellipse, oklch(0.53 0.23 256 / 0.12) 0%, transparent 65%);
+    pointer-events: none;
   }
 
-  /* ── Gamification chips — Clay-style ── */
+  .dot-grid {
+    background-image: radial-gradient(oklch(1 0 0 / 0.045) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* ── Gamification chips ── */
   .chip-xp {
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
-    padding: 0.375rem 0.875rem;
+    padding: 0.3rem 0.75rem;
     border-radius: 999px;
-    background: linear-gradient(135deg, #FEF3C7, #FDE68A);
-    color: #92400E;
+    background: var(--gold-muted);
+    color: var(--gold);
     font-weight: 700;
     font-size: 0.75rem;
-    border: 1.5px solid #FCD34D;
-    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.20), inset 0 1px 0 rgba(255,255,255,0.6);
-  }
-  .dark .chip-xp {
-    background: linear-gradient(135deg, #451A03, #78350F);
-    color: #FCD34D;
-    border-color: #92400E;
-    box-shadow: 0 2px 8px rgba(251, 191, 36, 0.15);
+    border: 1px solid var(--gold-border);
+    font-family: var(--fb);
   }
 
   .chip-streak {
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
-    padding: 0.375rem 0.875rem;
+    padding: 0.3rem 0.75rem;
     border-radius: 999px;
-    background: linear-gradient(135deg, #FFE4E6, #FECDD3);
-    color: #9F1239;
+    background: var(--rose-muted);
+    color: var(--rose);
     font-weight: 700;
     font-size: 0.75rem;
-    border: 1.5px solid #FDA4AF;
-    box-shadow: 0 2px 8px rgba(225, 29, 72, 0.18), inset 0 1px 0 rgba(255,255,255,0.6);
-  }
-  .dark .chip-streak {
-    background: linear-gradient(135deg, #4C0519, #881337);
-    color: #FDA4AF;
-    border-color: #9F1239;
-    box-shadow: 0 2px 8px rgba(251, 113, 133, 0.15);
+    border: 1px solid oklch(0.65 0.18 10 / 0.32);
+    font-family: var(--fb);
   }
 
-  /* ── Onboarding backgrounds ── */
-  .onboarding-bg {
-    background: radial-gradient(ellipse 80% 60% at 50% 0%, #EEF2FF, #F7F8FC 50%, #F7F8FC);
+  /* ── Pill badges ── */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.625rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+    font-family: var(--fb);
   }
-  .dark .onboarding-bg {
-    background: radial-gradient(ellipse 80% 60% at 50% 0%, #1E1B4B, #0F172A 50%, #0F172A);
+  .pill-blue {
+    background: var(--blue-muted);
+    color: oklch(0.72 0.18 256);
+    border-color: var(--blue-border);
+  }
+  .pill-gold {
+    background: var(--gold-muted);
+    color: var(--gold);
+    border-color: var(--gold-border);
+  }
+  .pill-emerald {
+    background: var(--emerald-muted);
+    color: var(--emerald);
+    border-color: var(--emerald-border);
+  }
+  .pill-rose {
+    background: var(--rose-muted);
+    color: var(--rose);
+    border-color: oklch(0.65 0.18 10 / 0.32);
+  }
+  .pill-gray {
+    background: var(--bg3);
+    color: var(--tx3);
+    border-color: var(--border);
   }
 
-  /* ── Subtle ambient glow for stat cards ── */
-  .sparkle-bg {
-    background-image:
-      radial-gradient(circle at 20% 30%, rgba(91, 76, 245, 0.05) 0%, transparent 50%),
-      radial-gradient(circle at 80% 70%, rgba(129, 140, 248, 0.05) 0%, transparent 50%),
-      radial-gradient(circle at 60% 20%, rgba(91, 76, 245, 0.03) 0%, transparent 40%);
+  /* ── Progress bar ── */
+  .prog-track {
+    height: 6px;
+    border-radius: 4px;
+    background: var(--bg3, var(--muted));
+    overflow: hidden;
   }
+  .prog-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--blue);
+    transition: width 0.6s var(--ease-out);
+  }
+  .prog-fill-gold { background: var(--gold); }
+  .prog-fill-emerald { background: var(--emerald); }
 
   /* ── Text gradient ── */
   .text-gradient {
-    background: linear-gradient(135deg, #5B4CF5 0%, #818CF8 100%);
+    background: linear-gradient(135deg, oklch(0.53 0.23 256) 0%, oklch(0.67 0.18 256) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  /* ── Primary button ── */
-  .btn-primary {
-    @apply bg-primary text-primary-foreground rounded-full px-6 py-3 font-semibold
-           hover:bg-[#4338CA] transition-all duration-200
-           hover:shadow-lg hover:shadow-primary/25 active:scale-95;
+  /* ── Section label ── */
+  .section-label {
+    display: inline-block;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--blue);
+    font-family: var(--fb);
   }
 
-  /* ── Nav active indicator ── */
+  /* ── Nav active state ── */
   .nav-active {
-    position: relative;
-    background: linear-gradient(135deg, #5B4CF5, #818CF8);
-    color: #FFFFFF;
-    box-shadow: 0 4px 14px rgba(91, 76, 245, 0.35);
+    background: var(--blue-muted);
+    color: oklch(0.72 0.18 256) !important;
+    font-weight: 600 !important;
   }
-  .dark .nav-active {
-    box-shadow: 0 4px 14px rgba(129, 140, 248, 0.25);
+
+  /* ── Button primary ── */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5625rem 1.125rem;
+    border-radius: var(--radius-lg);
+    background: var(--blue);
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: var(--fb);
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  }
+  .btn-primary:hover {
+    background: var(--blue-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px var(--blue-border);
+  }
+  .btn-primary:active { transform: translateY(0); }
+
+  /* ── Glass card (alias for card-flat) ── */
+  .glass-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+  }
+
+  /* ── Onboarding bg ── */
+  .onboarding-bg {
+    background: var(--background);
   }
 
   /* ── Progress ring animation ── */
@@ -316,7 +427,16 @@
     animation: dash 1s ease-out forwards;
   }
 
-  /* ── Smooth reduced motion ── */
+  /* ── Fade in ── */
+  .fade-in {
+    animation: fadeIn 0.4s var(--ease-out) both;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Reduced motion ── */
   @media (prefers-reduced-motion: reduce) {
     * {
       animation-duration: 0.01ms !important;

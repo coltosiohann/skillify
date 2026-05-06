@@ -9,7 +9,6 @@ import {
   PlusCircle,
   Trophy,
   Settings,
-  Zap,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -25,16 +24,22 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "./SidebarContext";
 
-const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/courses", icon: BookOpen, label: "My Courses" },
-  { href: "/onboarding", icon: PlusCircle, label: "New Course" },
-  { href: "/bookmarks", icon: Bookmark, label: "Bookmarks" },
-  { href: "/achievements", icon: Trophy, label: "Achievements" },
-  { href: "/leaderboard", icon: BarChart2, label: "Leaderboard" },
-  { href: "/notifications", icon: Bell, label: "Notifications" },
-  { href: "/profile", icon: User, label: "Profile" },
-  { href: "/settings", icon: Settings, label: "Settings" },
+const navMain = [
+  { href: "/dashboard",    icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/courses",      icon: BookOpen,        label: "My Courses" },
+  { href: "/onboarding",   icon: PlusCircle,      label: "New Course", badge: "AI" },
+];
+
+const navProgress = [
+  { href: "/leaderboard",  icon: BarChart2,       label: "Leaderboard" },
+  { href: "/achievements", icon: Trophy,          label: "Achievements" },
+  { href: "/bookmarks",    icon: Bookmark,        label: "Bookmarks" },
+];
+
+const navAccount = [
+  { href: "/notifications", icon: Bell,    label: "Notifications" },
+  { href: "/profile",       icon: User,    label: "Profile" },
+  { href: "/settings",      icon: Settings, label: "Settings" },
 ];
 
 export default function Sidebar() {
@@ -44,7 +49,6 @@ export default function Sidebar() {
   const router = useRouter();
   const supabase = createClient();
 
-  // Keyboard shortcuts: Alt+D = Dashboard, Alt+C = Courses, Alt+N = New Course
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (!e.altKey) return;
@@ -62,16 +66,79 @@ export default function Sidebar() {
   }
 
   function handleNavClick() {
-    // Close mobile sidebar on navigation
     setMobileOpen(false);
+  }
+
+  function isActive(href: string) {
+    return pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+  }
+
+  function NavGroup({ items, label }: { items: typeof navMain; label?: string }) {
+    return (
+      <div>
+        {label && !collapsed && (
+          <div
+            className="px-3 pt-5 pb-1 text-[10px] font-bold tracking-[0.08em] uppercase"
+            style={{ color: "var(--tx3)" }}
+          >
+            {label}
+          </div>
+        )}
+        {items.map((item) => {
+          const active = isActive(item.href);
+          return (
+            <Link key={item.href} href={item.href} onClick={handleNavClick}>
+              <div
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150 cursor-pointer mb-0.5 relative",
+                  active
+                    ? "nav-active"
+                    : "text-sidebar-foreground hover:bg-[var(--hover)]"
+                )}
+                style={active ? {} : { color: "var(--tx2)" }}
+              >
+                <item.icon className="w-4 h-4 flex-shrink-0" />
+                <AnimatePresence>
+                  {(!collapsed || mobileOpen) && (
+                    <motion.span
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: "auto" }}
+                      exit={{ opacity: 0, width: 0 }}
+                      transition={{ duration: 0.18 }}
+                      className="text-sm font-medium whitespace-nowrap overflow-hidden"
+                    >
+                      {item.label}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+                {"badge" in item && item.badge && (!collapsed || mobileOpen) && (
+                  <span
+                    className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white"
+                    style={{ background: "var(--blue)" }}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    );
   }
 
   const sidebarContent = (
     <>
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 h-16 border-b border-sidebar-border overflow-hidden flex-shrink-0">
-        <div className="flex-shrink-0 w-9 h-9 rounded-2xl flex items-center justify-center shadow-md shadow-primary/30" style={{ background: "linear-gradient(135deg, #5B4CF5, #818CF8)" }}>
-          <Zap className="w-4 h-4 text-white fill-white" />
+      <div
+        className="flex items-center gap-2.5 px-[18px] flex-shrink-0 border-b"
+        style={{ height: "56px", borderColor: "var(--border)" }}
+      >
+        <div
+          className="flex-shrink-0 w-[30px] h-[30px] rounded-[9px] flex items-center justify-center font-bold text-[15px] text-white"
+          style={{ background: "var(--blue)", fontFamily: "var(--fd)" }}
+        >
+          S
         </div>
         <AnimatePresence>
           {(!collapsed || mobileOpen) && (
@@ -79,71 +146,57 @@ export default function Sidebar() {
               initial={{ opacity: 0, width: 0 }}
               animate={{ opacity: 1, width: "auto" }}
               exit={{ opacity: 0, width: 0 }}
-              transition={{ duration: 0.2 }}
-              className="font-heading font-bold text-lg text-foreground whitespace-nowrap overflow-hidden"
+              transition={{ duration: 0.18 }}
+              className="font-heading font-bold text-base whitespace-nowrap overflow-hidden"
             >
               Skillify
             </motion.span>
           )}
         </AnimatePresence>
-        {/* Mobile close button */}
         <button
           onClick={() => setMobileOpen(false)}
-          className="ml-auto md:hidden p-1 rounded-lg hover:bg-primary/5 transition-colors cursor-pointer"
+          className="ml-auto md:hidden p-1 rounded-lg transition-colors cursor-pointer"
           aria-label="Close menu"
+          style={{ color: "var(--tx3)" }}
         >
-          <X className="w-5 h-5 text-muted-foreground" />
+          <X className="w-5 h-5" />
         </button>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-2 py-4 flex flex-col gap-1 overflow-hidden" data-tour="sidebar-nav">
-        {navItems.map((item) => {
-          const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
-          return (
-            <Link key={item.href} href={item.href} onClick={handleNavClick}>
-              <div
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-all duration-150 cursor-pointer group",
-                  active
-                    ? "nav-active"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                )}
-              >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
-                <AnimatePresence>
-                  {(!collapsed || mobileOpen) && (
-                    <motion.span
-                      initial={{ opacity: 0, width: 0 }}
-                      animate={{ opacity: 1, width: "auto" }}
-                      exit={{ opacity: 0, width: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="text-sm font-medium whitespace-nowrap overflow-hidden"
-                    >
-                      {item.label}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </div>
-            </Link>
-          );
-        })}
+      <nav
+        className="flex-1 px-2.5 py-3 flex flex-col overflow-y-auto overflow-x-hidden"
+        style={{ scrollbarWidth: "none" }}
+        data-tour="sidebar-nav"
+      >
+        <NavGroup items={navMain} />
+        <NavGroup items={navProgress} label="Progress" />
+        <NavGroup items={navAccount} label="Account" />
       </nav>
 
       {/* Sign out */}
-      <div className="px-2 py-3 border-t border-sidebar-border flex-shrink-0">
+      <div className="px-2.5 py-3 border-t flex-shrink-0" style={{ borderColor: "var(--border)" }}>
         <button
           onClick={handleSignOut}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted-foreground hover:bg-red-50 hover:text-red-500 transition-all duration-150 cursor-pointer"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150 cursor-pointer"
+          style={{ color: "var(--tx3)" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "#ef4444";
+            e.currentTarget.style.background = "oklch(0.65 0.18 10 / 0.08)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "var(--tx3)";
+            e.currentTarget.style.background = "transparent";
+          }}
         >
-          <LogOut className="w-5 h-5 flex-shrink-0" />
+          <LogOut className="w-4 h-4 flex-shrink-0" />
           <AnimatePresence>
             {(!collapsed || mobileOpen) && (
               <motion.span
                 initial={{ opacity: 0, width: 0 }}
                 animate={{ opacity: 1, width: "auto" }}
                 exit={{ opacity: 0, width: 0 }}
-                transition={{ duration: 0.2 }}
+                transition={{ duration: 0.18 }}
                 className="text-sm font-medium whitespace-nowrap overflow-hidden"
               >
                 Sign Out
@@ -159,22 +212,31 @@ export default function Sidebar() {
     <>
       {/* Desktop sidebar */}
       <motion.aside
-        animate={{ width: collapsed ? 68 : 240 }}
-        transition={{ duration: 0.25, ease: "easeOut" as const }}
-        className="relative flex-shrink-0 h-screen bg-sidebar border-r border-sidebar-border flex-col z-30 hidden md:flex"
+        animate={{ width: collapsed ? 60 : 220 }}
+        transition={{ duration: 0.22, ease: "easeOut" }}
+        className="relative flex-shrink-0 h-screen flex-col z-30 hidden md:flex border-r"
+        style={{
+          background: "var(--sidebar)",
+          borderColor: "var(--sidebar-border)",
+        }}
       >
         {sidebarContent}
 
         {/* Collapse toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-card border border-primary/15 shadow-sm flex items-center justify-center hover:bg-primary/5 transition-colors cursor-pointer z-10"
+          className="absolute -right-3 top-[72px] w-6 h-6 rounded-full flex items-center justify-center transition-colors cursor-pointer z-10 border"
+          style={{
+            background: "var(--card)",
+            borderColor: "var(--border)",
+            color: "var(--tx3)",
+          }}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? (
-            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+            <ChevronRight className="w-3 h-3" />
           ) : (
-            <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground" />
+            <ChevronLeft className="w-3 h-3" />
           )}
         </button>
       </motion.aside>
@@ -183,22 +245,24 @@ export default function Sidebar() {
       <AnimatePresence>
         {mobileOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 bg-black/40 z-40 md:hidden"
+              className="fixed inset-0 bg-black/50 z-40 md:hidden"
             />
-            {/* Drawer */}
             <motion.aside
-              initial={{ x: -280 }}
+              initial={{ x: -260 }}
               animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="fixed inset-y-0 left-0 w-64 bg-sidebar border-r border-sidebar-border flex flex-col z-50 md:hidden"
+              exit={{ x: -260 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              className="fixed inset-y-0 left-0 w-[220px] flex flex-col z-50 md:hidden border-r"
+              style={{
+                background: "var(--sidebar)",
+                borderColor: "var(--sidebar-border)",
+              }}
             >
               {sidebarContent}
             </motion.aside>

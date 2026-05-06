@@ -14,7 +14,6 @@ export interface WizardData {
   domain: string;
   category: string;
   goalType: GoalType;
-  // Smart context fields (from Step3Smart)
   timeframe?: string;
   useCases?: string[];
   constraints?: string[];
@@ -41,6 +40,8 @@ const DEFAULT: WizardData = {
   learningStyle: "balanced",
 };
 
+const STEP_LABELS = ["Goal", "Materials", "Details", "Schedule"];
+
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [data, setData] = useState<WizardData>(DEFAULT);
@@ -49,11 +50,9 @@ export default function OnboardingPage() {
   function next(patch: Partial<WizardData>) {
     const updated = { ...data, ...patch };
     setData(updated);
-
     if (step < 4) {
       setStep((s) => s + 1);
     } else {
-      // Save to localStorage and go to generating page
       localStorage.setItem("skillify_wizard", JSON.stringify(updated));
       router.push("/onboarding/generating");
     }
@@ -64,39 +63,52 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 onboarding-bg">
-      {/* Step dots */}
-      <div className="fixed top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
-        {[1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className={`h-2 rounded-full transition-all duration-300 ${
-              i === step
-                ? "bg-primary w-6"
-                : i < step
-                ? "bg-primary/40 w-2"
-                : "bg-primary/15 w-2"
-            }`}
-          />
-        ))}
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px", background: "var(--background)" }}>
+      {/* Step progress indicator */}
+      <div style={{ position: "fixed", top: "24px", left: "50%", transform: "translateX(-50%)", zIndex: 50 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0", position: "relative" }}>
+          {/* Connector line behind steps */}
+          <div style={{
+            position: "absolute", top: "16px", left: "16px", right: "16px",
+            height: "1px", background: "var(--border)", zIndex: 0,
+          }} />
+          {STEP_LABELS.map((label, idx) => {
+            const i = idx + 1;
+            const done = i < step;
+            const active = i === step;
+            return (
+              <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", flex: 1, position: "relative", zIndex: 1, minWidth: "60px" }}>
+                <div style={{
+                  width: "32px", height: "32px", borderRadius: "50%",
+                  background: done ? "var(--emerald)" : active ? "var(--blue)" : "var(--muted)",
+                  border: `2px solid ${done ? "var(--emerald)" : active ? "var(--blue)" : "var(--border)"}`,
+                  display: "grid", placeItems: "center",
+                  fontSize: "12px", fontWeight: 700,
+                  color: (done || active) ? "#fff" : "var(--muted-foreground)",
+                  boxShadow: active ? "0 0 0 4px var(--blue-muted)" : "none",
+                  transition: "all 0.25s",
+                }}>
+                  {done ? "✓" : i}
+                </div>
+                <span style={{
+                  fontSize: "11px", fontWeight: 600,
+                  color: done ? "var(--emerald)" : active ? "var(--blue)" : "var(--muted-foreground)",
+                  transition: "color 0.25s",
+                }}>
+                  {label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <AnimatePresence mode="wait">
-        {step === 1 && (
-          <Step1Domain key="step1" data={data} onNext={next} />
-        )}
-        {step === 2 && (
-          <Step2Upload key="step2" data={data} onNext={next} onBack={back} />
-        )}
-        {step === 3 && data.goalType === "learning" && (
-          <Step3Assessment key="step3-assess" data={data} onNext={next} onBack={back} />
-        )}
-        {step === 3 && data.goalType !== "learning" && (
-          <Step3Smart key="step3-smart" data={data} onNext={next} onBack={back} />
-        )}
-        {step === 4 && (
-          <Step4Schedule key="step4" data={data} onNext={next} onBack={back} />
-        )}
+        {step === 1 && <Step1Domain key="step1" data={data} onNext={next} />}
+        {step === 2 && <Step2Upload key="step2" data={data} onNext={next} onBack={back} />}
+        {step === 3 && data.goalType === "learning" && <Step3Assessment key="step3-assess" data={data} onNext={next} onBack={back} />}
+        {step === 3 && data.goalType !== "learning" && <Step3Smart key="step3-smart" data={data} onNext={next} onBack={back} />}
+        {step === 4 && <Step4Schedule key="step4" data={data} onNext={next} onBack={back} />}
       </AnimatePresence>
     </div>
   );

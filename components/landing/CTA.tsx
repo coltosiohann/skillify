@@ -1,115 +1,112 @@
 "use client";
 
 import { useRef } from "react";
-import { motion, useInView, useReducedMotion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, Zap, Star } from "lucide-react";
 
 export default function CTA() {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
-  const reduce = useReducedMotion();
+  const inView = useInView(ref as React.RefObject<Element>, { once: true, margin: "-80px" });
 
   return (
-    <section ref={ref} className="py-16 px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 32, scale: 0.97 }}
-        animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}}
-        transition={{ duration: 0.65, ease: "easeOut" as const }}
-        className="max-w-5xl mx-auto relative overflow-hidden rounded-3xl"
+    <section
+      ref={ref}
+      style={{
+        background: "oklch(0.065 0.012 255)",
+        padding: "96px 32px",
+        textAlign: "center",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* Dot grid */}
+      <div
         style={{
-          background: "linear-gradient(145deg, #3730A3 0%, #4338CA 30%, #5B4CF5 65%, #6D5FFA 100%)",
-          boxShadow: "0 40px 100px rgba(67,56,202,0.40), 0 0 0 1px rgba(129,140,248,0.15)",
+          position: "absolute",
+          inset: 0,
+          backgroundImage: "radial-gradient(oklch(1 0 0 / 0.04) 1px, transparent 1px)",
+          backgroundSize: "24px 24px",
+          pointerEvents: "none",
         }}
+      />
+      {/* Radial glow */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "radial-gradient(ellipse 60% 80% at 50% 100%, oklch(0.53 0.23 256 / 0.15), transparent)",
+          pointerEvents: "none",
+        }}
+      />
+
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={inView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        style={{ position: "relative", zIndex: 1 }}
       >
-        {/* Top highlight line */}
-        <div className="absolute top-0 left-1/4 right-1/4 h-px" style={{ background: "rgba(255,255,255,0.30)" }} />
-
-        {/* Floating orbs */}
-        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full blur-3xl pointer-events-none" style={{ background: "rgba(129,140,248,0.25)" }} />
-        <div className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full blur-3xl pointer-events-none" style={{ background: "rgba(67,56,202,0.35)" }} />
-
-        {/* Floating XP badge */}
-        <motion.div
-          className="absolute top-6 right-6 sm:top-8 sm:right-10 flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold pointer-events-none"
-          style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.20)", color: "white", backdropFilter: "blur(8px)" }}
-          animate={reduce ? {} : { y: [0, -6, 0] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" as const }}
+        <h2
+          style={{
+            fontFamily: "var(--font-bricolage)",
+            fontSize: "clamp(36px, 5vw, 64px)",
+            fontWeight: 800,
+            letterSpacing: "-2px",
+            lineHeight: 1.05,
+            color: "#fff",
+            marginBottom: "16px",
+          }}
         >
-          <Zap className="w-3 h-3 fill-amber-300 text-amber-300" />
-          +50 XP Earned
-        </motion.div>
-
-        {/* Star badge */}
-        <motion.div
-          className="absolute bottom-6 left-6 sm:bottom-8 sm:left-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold pointer-events-none"
-          style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.18)", color: "white", backdropFilter: "blur(8px)" }}
-          animate={reduce ? {} : { y: [0, 6, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" as const, delay: 1 }}
+          Your next skill is<br />30 seconds away.
+        </h2>
+        <p
+          style={{
+            fontSize: "18px",
+            color: "oklch(0.62 0.01 255)",
+            marginBottom: "36px",
+            maxWidth: "480px",
+            marginLeft: "auto",
+            marginRight: "auto",
+          }}
         >
-          <Star className="w-3 h-3 fill-amber-300 text-amber-300" />
-          4.9 / 5 Rating
-        </motion.div>
+          Join 10,000+ learners building real skills with AI-generated courses tailored just for them.
+        </p>
 
-        {/* Content */}
-        <div className="relative z-10 px-8 py-16 sm:px-16 sm:py-20 text-center">
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.1 }}
-            className="text-xs font-bold uppercase tracking-widest mb-5"
-            style={{ color: "rgba(255,255,255,0.55)" }}
+        <Link href="/signup">
+          <button
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "13px 24px",
+              borderRadius: "14px",
+              fontSize: "15px",
+              fontWeight: 600,
+              background: "var(--blue)",
+              color: "#fff",
+              border: "none",
+              cursor: "pointer",
+              transition: "background 0.2s, transform 0.15s, box-shadow 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.background = "var(--blue-hover)";
+              el.style.transform = "translateY(-2px)";
+              el.style.boxShadow = "0 8px 32px var(--blue-border)";
+            }}
+            onMouseLeave={(e) => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.background = "var(--blue)";
+              el.style.transform = "";
+              el.style.boxShadow = "";
+            }}
           >
-            Start Today — It&apos;s Free
-          </motion.p>
+            Generate my first course →
+          </button>
+        </Link>
 
-          <motion.h2
-            initial={{ opacity: 0, y: 16 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.2 }}
-            className="font-heading text-4xl sm:text-5xl lg:text-[56px] font-extrabold text-white mb-6 leading-[1.05]"
-          >
-            Build your first course
-            <br />
-            in <span style={{ color: "#FDE68A" }}>30 seconds.</span>
-          </motion.h2>
-
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.3 }}
-            className="text-lg mb-10 max-w-lg mx-auto"
-            style={{ color: "rgba(255,255,255,0.65)" }}
-          >
-            Join 10,000+ learners mastering new skills with AI-powered personalized roadmaps.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
-          >
-            <Link href="/signup">
-              <motion.button
-                whileHover={reduce ? {} : { scale: 1.04 }}
-                whileTap={{ scale: 0.97 }}
-                className="flex items-center gap-2.5 px-8 py-4 rounded-2xl text-base font-bold cursor-pointer transition-all"
-                style={{
-                  background: "white",
-                  color: "#4338CA",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.20)",
-                }}
-              >
-                Get Started Free
-                <ArrowRight className="w-4 h-4" />
-              </motion.button>
-            </Link>
-            <p className="text-sm" style={{ color: "rgba(255,255,255,0.50)" }}>
-              No credit card · 3-day free trial
-            </p>
-          </motion.div>
-        </div>
+        <p style={{ fontSize: "13px", color: "oklch(0.42 0.01 255)", marginTop: "16px" }}>
+          Free forever · No credit card · Cancel anytime
+        </p>
       </motion.div>
     </section>
   );

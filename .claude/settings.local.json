@@ -21,7 +21,8 @@
       "Bash(where callback:*)",
       "Bash(grep -r \"\"Stop\"\" C:Userscolto.claude --include=*.json)",
       "Bash(ls \"C:\\\\Users\\\\colto\\\\Desktop\\\\website+apps\\\\skillify_new\\\\app\\\\\\(app\\)\")",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "WebFetch(domain:api.anthropic.com)"
     ]
   }
 }

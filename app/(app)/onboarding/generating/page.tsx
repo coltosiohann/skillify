@@ -412,10 +412,7 @@ export default function GeneratingPage() {
   return (
     <div
       className="min-h-screen flex items-center justify-center p-6"
-      style={{
-        background:
-          "radial-gradient(ellipse 80% 60% at 50% 0%, #4c1d95, #4338CA 30%, #5B4CF5 60%, #1e1b4b)",
-      }}
+      style={{ background: "oklch(0.065 0.012 255)" }}
     >
       {/* Background sparkles */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">

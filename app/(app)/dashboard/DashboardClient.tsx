@@ -1,16 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
-  BookOpen, Zap, Flame, PlusCircle, ArrowRight, Play,
-  Target, Trophy, CheckCircle2, Sparkles, ChevronRight,
+  BookOpen, Zap, Flame, PlusCircle, ArrowRight,
   Code2, Palette, TrendingUp, Globe, Dumbbell, Music,
   Calculator, FlaskConical, Camera, GraduationCap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { getCurrentLevel, getLevelProgress } from "@/lib/levels";
 import OnboardingTour from "@/components/app/OnboardingTour";
 
@@ -39,15 +37,12 @@ interface DashboardVM {
   activeCourses: Course[]; completedCourses: Course[]; allCourses: Course[];
   nextLesson: { lessonId: string; lessonTitle: string; courseId: string; courseTitle: string; coursePct: number } | null;
   resumeCourses: ResumeCourse[]; completedSet: Set<string>; totalMinutesLearned: number;
+  lessonsCompleted: number;
 }
-
-// ─── Analytics ────────────────────────────────────────────────────────────────
 
 function trackEvent(name: string, props?: Record<string, unknown>) {
   if (process.env.NODE_ENV === "development") console.debug("[analytics]", name, props);
 }
-
-// ─── Domain icon map ──────────────────────────────────────────────────────────
 
 function getDomainIcon(domain: string): LucideIcon {
   const d = domain.toLowerCase();
@@ -64,29 +59,20 @@ function getDomainIcon(domain: string): LucideIcon {
   return BookOpen;
 }
 
-// Domain → gradient for thumbnail
-function getDomainGradient(domain: string): string {
+function getDomainColor(domain: string): { hue: number; label: string } {
   const d = domain.toLowerCase();
-  if (/python|javascript|typescript|coding|program|software|web|react|node|dev/.test(d)) return "from-blue-500 to-indigo-600";
-  if (/design|ui|ux|figma|graphic|art|creative|illustration/.test(d)) return "from-pink-400 to-violet-500";
-  if (/fitness|workout|gym|sport|run|yoga|health|abs|muscle/.test(d)) return "from-orange-400 to-red-500";
-  if (/music|guitar|piano|drum|sing|audio/.test(d)) return "from-purple-400 to-pink-500";
-  if (/language|spanish|french|german|japanese|chinese|english/.test(d)) return "from-teal-400 to-cyan-500";
-  if (/math|calculus|algebra|statistics|physics/.test(d)) return "from-sky-400 to-blue-500";
-  if (/business|marketing|finance|startup|entrepreneur/.test(d)) return "from-emerald-400 to-teal-500";
-  if (/science|biology|chemistry|anatomy/.test(d)) return "from-lime-400 to-green-500";
-  return "from-violet-500 to-primary";
+  if (/python|javascript|typescript|coding|program|software|web|react|node|dev/.test(d)) return { hue: 256, label: "JavaScript" };
+  if (/design|ui|ux|figma|graphic|art|creative|illustration/.test(d)) return { hue: 295, label: "Design" };
+  if (/fitness|workout|gym|sport|run|yoga|health/.test(d)) return { hue: 20, label: "Fitness" };
+  if (/music|guitar|piano|drum|sing|audio/.test(d)) return { hue: 310, label: "Music" };
+  if (/language|spanish|french|german|japanese|chinese|english/.test(d)) return { hue: 185, label: "Language" };
+  if (/math|calculus|algebra|statistics|physics/.test(d)) return { hue: 210, label: "Math" };
+  if (/business|marketing|finance|startup|entrepreneur/.test(d)) return { hue: 75, label: "Finance" };
+  if (/science|biology|chemistry|anatomy/.test(d)) return { hue: 140, label: "Science" };
+  return { hue: 256, label: domain };
 }
 
-// ─── Motion helper ────────────────────────────────────────────────────────────
-
-const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 16 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] as const, delay },
-});
-
-// ─── ViewModel hook ───────────────────────────────────────────────────────────
+// ─── ViewModel ───────────────────────────────────────────────────────────────
 
 function useDashboardViewModel(props: {
   profile: Profile | null; emailFallback: string; courses: Course[];
@@ -100,7 +86,9 @@ function useDashboardViewModel(props: {
     const greeting       = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
     const xp             = profile?.total_xp ?? 0;
     const streak         = profile?.current_streak ?? 0;
-    const subline        = streak > 0 ? "Keep learning, keep leveling up." : "Ready to learn something new today?";
+    const subline        = streak > 0
+      ? `You're on a ${streak}-day streak. ${Math.max(0, weeklyGoal - weeklyXp)} XP to reach your weekly goal.`
+      : "Ready to learn something new today?";
 
     const currentLevel   = getCurrentLevel(xp);
     const { pct: levelPct, xpInLevel, xpNeeded } = getLevelProgress(xp);
@@ -108,6 +96,7 @@ function useDashboardViewModel(props: {
 
     const activeCourses    = courses.filter((c) => c.status === "active");
     const completedCourses = courses.filter((c) => c.status === "completed");
+    const lessonsCompleted = completedLessonIds.length;
 
     const sortedFlat = (course: Course) =>
       [...(course.modules ?? [])]
@@ -139,459 +128,337 @@ function useDashboardViewModel(props: {
       weeklyXp, weeklyGoal, weeklyPct, goalDone: weeklyPct >= 100,
       activeCourses, completedCourses, allCourses: courses,
       nextLesson, resumeCourses, completedSet, totalMinutesLearned,
+      lessonsCompleted,
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.profile, props.emailFallback, props.courses, props.completedLessonIds, props.weeklyXp, props.weeklyGoal, props.totalMinutesLearned]);
 }
 
-// ─── CourseThumbnail ──────────────────────────────────────────────────────────
+// ─── Shared panel style ───────────────────────────────────────────────────────
 
-function CourseThumbnail({ domain, size = "md" }: { domain: string; size?: "sm" | "md" }) {
-  const DomainIcon = getDomainIcon(domain);
-  const gradient   = getDomainGradient(domain);
-  const dim        = size === "sm" ? "w-16 h-16 min-w-[4rem]" : "w-20 h-20 min-w-[5rem]";
+const panel: React.CSSProperties = {
+  background: "var(--card)",
+  border: "1px solid var(--border)",
+  borderRadius: "var(--radius-xl)",
+  padding: "18px",
+};
+
+// ─── StatCard ─────────────────────────────────────────────────────────────────
+
+function StatCard({
+  icon, iconBg, value, label, delta,
+}: { icon: string; iconBg: string; value: string | number; label: string; delta?: string }) {
   return (
-    <div className={`${dim} rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-sm flex-shrink-0`}>
-      <DomainIcon className="w-8 h-8 text-white/85" />
+    <div
+      style={{ ...panel, transition: "border-color 0.2s, transform 0.2s" }}
+      onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "var(--blue-border)"; el.style.transform = "translateY(-2px)"; }}
+      onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "var(--border)"; el.style.transform = "translateY(0)"; }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+        <div style={{ width: "36px", height: "36px", borderRadius: "10px", display: "grid", placeItems: "center", fontSize: "16px", background: iconBg }}>
+          {icon}
+        </div>
+        {delta && <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--emerald)" }}>{delta}</span>}
+      </div>
+      <div style={{ fontFamily: "var(--font-bricolage)", fontSize: "28px", fontWeight: 800, letterSpacing: "-1px", marginBottom: "2px" }}>
+        {typeof value === "number" ? value.toLocaleString("en-US") : value}
+      </div>
+      <div style={{ fontSize: "12px", color: "var(--muted-foreground)" }}>{label}</div>
     </div>
   );
 }
 
-// ─── ContinueHeroCard ─────────────────────────────────────────────────────────
+// ─── ContinueBanner ───────────────────────────────────────────────────────────
 
-function ContinueHeroCard({ vm }: { vm: DashboardVM }) {
+function ContinueBanner({ vm }: { vm: DashboardVM }) {
   const { nextLesson } = vm;
   if (!nextLesson) return null;
   const { lessonTitle, lessonId, courseId, courseTitle, coursePct } = nextLesson;
 
   return (
-    <motion.div {...fadeUp(0.06)}>
-      <Link href={`/courses/${courseId}/lesson/${lessonId}`} onClick={() => trackEvent("hero_resume_click", { courseId })}>
-        <div className="relative bg-gradient-to-br from-[#4338CA] via-[#5B4CF5] to-[#818CF8] rounded-3xl p-6 pb-7 shadow-2xl shadow-primary/30 overflow-hidden cursor-pointer group">
-          {/* Background decoration */}
-          <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-white/5 -translate-y-1/3 translate-x-1/4 pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-white/5 translate-y-1/2 -translate-x-1/4 pointer-events-none" />
-          <div className="absolute bottom-4 right-4 w-20 h-20 rounded-full bg-white/5 pointer-events-none" />
+    <Link href={`/courses/${courseId}/lesson/${lessonId}`} onClick={() => trackEvent("hero_resume_click", { courseId })}>
+      <div
+        style={{
+          display: "flex", alignItems: "center", gap: "20px",
+          background: "var(--card2, var(--card))",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-xl)",
+          padding: "20px 24px",
+          marginBottom: "24px",
+          position: "relative",
+          overflow: "hidden",
+          cursor: "pointer",
+          transition: "border-color 0.2s",
+        }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--blue-border)"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; }}
+      >
+        {/* Blue gradient overlay */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(120deg, var(--blue-muted), transparent 55%)", pointerEvents: "none" }} />
 
-          {/* Top label */}
-          <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm text-white/90 text-xs font-semibold px-3 py-1 rounded-full mb-4">
-            <Zap className="w-3 h-3 fill-white/80" />
-            Continue your progress
+        <div style={{
+          width: "52px", height: "52px", borderRadius: "14px",
+          background: "var(--blue)", display: "grid", placeItems: "center",
+          fontSize: "24px", flexShrink: 0, zIndex: 1,
+        }}>
+          ⚛
+        </div>
+
+        <div style={{ flex: 1, zIndex: 1 }}>
+          <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "3px" }}>
+            Continue where you left off
           </div>
-
-          {/* Title */}
-          <h2 className="font-heading text-2xl font-extrabold text-white leading-tight mb-2 pr-12">
+          <div style={{ fontFamily: "var(--font-bricolage)", fontSize: "18px", fontWeight: 700, letterSpacing: "-0.3px", marginBottom: "2px" }}>
             {courseTitle}
-          </h2>
-          <p className="text-sm text-white/70 mb-1">{lessonTitle}</p>
-          <p className="text-xs text-white/55 mb-5">
-            {coursePct}% complete
-          </p>
-
-          {/* Progress bar */}
-          <div className="h-1 bg-white/20 rounded-full overflow-hidden mb-6">
-            <motion.div
-              className="h-full bg-white rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${coursePct}%` }}
-              transition={{ duration: 1, ease: "easeOut", delay: 0.4 }}
-            />
           </div>
-
-          {/* CTA button */}
-          <motion.div
-            className="inline-flex"
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.97 }}
-          >
-            <div className="flex items-center gap-2 bg-white text-primary font-bold text-sm px-5 py-2.5 rounded-full shadow-lg group-hover:shadow-xl transition-shadow">
-              <Play className="w-4 h-4 fill-primary" />
-              Continue
-              <ArrowRight className="w-4 h-4" />
-            </div>
-          </motion.div>
-        </div>
-      </Link>
-    </motion.div>
-  );
-}
-
-// ─── WelcomeHeroCard ──────────────────────────────────────────────────────────
-
-function WelcomeHeroCard() {
-  return (
-    <motion.div {...fadeUp(0.06)}>
-      <Link href="/onboarding" onClick={() => trackEvent("welcome_hero_cta_click")}>
-        <div className="relative bg-gradient-to-br from-[#4338CA] via-[#5B4CF5] to-[#818CF8] rounded-3xl p-6 pb-7 shadow-2xl shadow-primary/30 overflow-hidden cursor-pointer">
-          <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-white/5 -translate-y-1/3 translate-x-1/4 pointer-events-none" />
-          <div className="inline-flex items-center gap-1.5 bg-white/15 text-white/90 text-xs font-semibold px-3 py-1 rounded-full mb-4">
-            <Sparkles className="w-3 h-3" />
-            AI-powered learning
+          <div style={{ fontSize: "13px", color: "oklch(0.65 0.15 256)", marginBottom: "10px" }}>
+            Next: {lessonTitle}
           </div>
-          <h2 className="font-heading text-2xl font-extrabold text-white leading-tight mb-2">Build your first AI course</h2>
-          <p className="text-sm text-white/70 mb-6">Tell us what you want to master — we generate a personalised plan in seconds.</p>
-          <div className="inline-flex items-center gap-2 bg-white text-primary font-bold text-sm px-5 py-2.5 rounded-full shadow-lg">
-            <Sparkles className="w-4 h-4" />
-            Get Started
-            <ArrowRight className="w-4 h-4" />
-          </div>
-        </div>
-      </Link>
-    </motion.div>
-  );
-}
-
-// ─── AllDoneHeroCard ──────────────────────────────────────────────────────────
-
-function AllDoneHeroCard() {
-  return (
-    <motion.div {...fadeUp(0.06)}>
-      <Link href="/onboarding">
-        <div className="relative bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-6 pb-7 shadow-2xl shadow-emerald-500/25 overflow-hidden cursor-pointer">
-          <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-white/5 -translate-y-1/3 translate-x-1/4 pointer-events-none" />
-          <div className="inline-flex items-center gap-1.5 bg-white/15 text-white/90 text-xs font-semibold px-3 py-1 rounded-full mb-4">
-            <Trophy className="w-3 h-3" />
-            Outstanding work!
-          </div>
-          <h2 className="font-heading text-2xl font-extrabold text-white leading-tight mb-2">All courses complete!</h2>
-          <p className="text-sm text-white/75 mb-6">Keep growing — create a new course to continue your journey.</p>
-          <div className="inline-flex items-center gap-2 bg-white text-emerald-600 font-bold text-sm px-5 py-2.5 rounded-full shadow-lg">
-            <PlusCircle className="w-4 h-4" />
-            Create New Course
-          </div>
-        </div>
-      </Link>
-    </motion.div>
-  );
-}
-
-// ─── TodayGoalCard ────────────────────────────────────────────────────────────
-
-function TodayGoalCard({ vm }: { vm: DashboardVM }) {
-  const { nextLesson, streak, goalDone, weeklyXp, weeklyGoal } = vm;
-  const href = nextLesson
-    ? `/courses/${nextLesson.courseId}/lesson/${nextLesson.lessonId}`
-    : "/courses";
-
-  return (
-    <motion.div {...fadeUp(0.12)}>
-      <div className="bg-white dark:bg-card rounded-3xl border border-primary/8 p-5 shadow-sm">
-        <div className="flex items-start gap-3 mb-4">
-          {/* Icon */}
-          <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-            {goalDone
-              ? <CheckCircle2 className="w-5 h-5 text-primary" />
-              : <Target className="w-5 h-5 text-primary" />
-            }
-          </div>
-
-          {/* Text */}
-          <div className="flex-1 min-w-0">
-            <p className="font-heading font-bold text-foreground leading-tight">Today&apos;s Goal</p>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {goalDone ? "Weekly goal reached!" : "Complete 1 lesson"}
-            </p>
-            <p className="text-xs text-muted-foreground/70">
-              {goalDone ? "Great work this week." : "Keep your streak alive!"}
-            </p>
-          </div>
-
-          {/* XP badges + streak */}
-          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-            <div className="flex items-center gap-1 bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full">
-              <Zap className="w-3 h-3" />
-              +10 XP
-            </div>
-            {streak > 0 && (
-              <div className="flex items-center gap-1 bg-rose-100 dark:bg-rose-900/30 text-rose-600 text-xs font-bold px-2.5 py-1 rounded-full">
-                <Flame className="w-3 h-3" />
-                +5 XP
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Weekly XP mini bar */}
-        <div className="mb-4">
-          <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
-            <span>Weekly progress</span>
-            <span className={`font-semibold ${goalDone ? "text-emerald-600" : "text-primary"}`}>
-              {weeklyXp.toLocaleString("en-US")} / {weeklyGoal.toLocaleString("en-US")} XP
-            </span>
-          </div>
-          <div className="h-1.5 bg-primary/10 rounded-full overflow-hidden">
-            <motion.div
-              className={`h-full rounded-full ${goalDone ? "bg-emerald-500" : "bg-primary"}`}
-              initial={{ width: 0 }}
-              animate={{ width: `${Math.min(100, Math.round((weeklyXp / weeklyGoal) * 100))}%` }}
-              transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-            />
-          </div>
-        </div>
-
-        {/* CTA row */}
-        <div className="flex items-center gap-3">
-          <Link href={href} className="flex-1" onClick={() => trackEvent("goal_start_now_click")}>
-            <motion.div whileTap={{ scale: 0.97 }}>
-              <Button className="w-full rounded-full bg-primary hover:bg-[#4338CA] text-white font-bold gap-2 cursor-pointer shadow-md shadow-primary/25 h-11">
-                Start Now
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </motion.div>
-          </Link>
-          {/* Streak badge */}
-          {streak > 0 && (
-            <motion.div
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ repeat: Infinity, repeatDelay: 3, duration: 0.5 }}
-              className="flex flex-col items-center justify-center w-16 h-11 bg-rose-50 dark:bg-rose-900/20 rounded-2xl border border-rose-200 dark:border-rose-800 flex-shrink-0"
-            >
-              <Flame className="w-4 h-4 text-rose-500" />
-              <span className="text-[10px] font-bold text-rose-600 leading-tight">{streak} day</span>
-              <span className="text-[9px] text-rose-400 leading-tight">streak</span>
-            </motion.div>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-// ─── ProgressCard ("Your Progress") ──────────────────────────────────────────
-
-function ProgressCard({ vm }: { vm: DashboardVM }) {
-  const { xp, currentLevel, levelPct, xpInLevel, xpNeeded, streak, activeCourses } = vm;
-  const LevelIcon = currentLevel.icon;
-
-  return (
-    <motion.div {...fadeUp(0.18)} data-tour="dashboard-stats">
-      <div className="bg-white dark:bg-card rounded-3xl border border-primary/8 p-5 shadow-sm">
-        {/* Header row */}
-        <div className="flex items-center justify-between mb-4">
-          <p className="font-heading font-bold text-foreground underline decoration-2 decoration-primary/30 underline-offset-2">Your Progress</p>
-          <div className={`flex items-center gap-1.5 bg-gradient-to-r ${currentLevel.color} text-white text-xs font-bold px-3 py-1 rounded-full`}>
-            <LevelIcon className="w-3 h-3" />
-            {currentLevel.name}
-          </div>
-        </div>
-
-        {/* XP large display */}
-        <div className="mb-3">
-          <div className="flex items-baseline gap-1.5 mb-2">
-            <span className="font-heading text-3xl font-extrabold text-primary">
-              {xpInLevel.toLocaleString("en-US")}
-            </span>
-            <span className="text-base font-semibold text-muted-foreground">
-              / {xpNeeded > 0 ? xpNeeded.toLocaleString("en-US") : "∞"} XP
-            </span>
-          </div>
-          {/* Level bar */}
-          <div className="h-2.5 bg-primary/10 rounded-full overflow-hidden">
-            <motion.div
-              className={`h-full bg-gradient-to-r ${currentLevel.color} rounded-full`}
-              initial={{ width: 0 }}
-              animate={{ width: `${levelPct}%` }}
-              transition={{ duration: 0.9, ease: "easeOut", delay: 0.3 }}
-            />
-          </div>
-        </div>
-
-        {/* Stats strip */}
-        <div className="flex items-center gap-4 pt-3 border-t border-primary/6">
-          <div className="flex items-center gap-1.5">
-            <Flame className="w-4 h-4 text-rose-500" />
-            <span className="text-sm font-semibold text-foreground">{streak}-day streak</span>
-          </div>
-          <div className="w-px h-4 bg-border" />
-          <div className="flex items-center gap-1.5">
-            <BookOpen className="w-4 h-4 text-primary/70" />
-            <span className="text-sm font-semibold text-foreground">{activeCourses.length} active course{activeCourses.length !== 1 ? "s" : ""}</span>
-          </div>
-          <div className="ml-auto">
-            <span className="text-xs font-bold text-primary">
-              {xp.toLocaleString("en-US")} total XP
-            </span>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-// ─── ContinueLearningSection ──────────────────────────────────────────────────
-
-function ContinueLearningSection({ vm }: { vm: DashboardVM }) {
-  const { resumeCourses } = vm;
-  if (resumeCourses.length === 0) return null;
-
-  return (
-    <motion.div {...fadeUp(0.26)}>
-      <div className="flex items-center justify-between mb-3" data-tour="dashboard-courses">
-        <h2 className="font-heading font-bold text-lg text-foreground">Continue Learning</h2>
-        <Link href="/courses">
-          <Button variant="ghost" size="sm" className="text-primary gap-1 cursor-pointer text-sm font-semibold h-8 px-3 hover:bg-primary/8">
-            View all <ChevronRight className="w-4 h-4" />
-          </Button>
-        </Link>
-      </div>
-      <div className="space-y-3">
-        {resumeCourses.map((data, i) => (
-          <ContinueCourseCard key={data.course.id} data={data} index={i} />
-        ))}
-      </div>
-    </motion.div>
-  );
-}
-
-function ContinueCourseCard({ data, index }: { data: ResumeCourse; index: number }) {
-  const { course, pct, completedCount, totalCount, nextLessonId, nextLessonTitle } = data;
-  const href = nextLessonId
-    ? `/courses/${course.id}/lesson/${nextLessonId}`
-    : `/courses/${course.id}`;
-
-  return (
-    <motion.div {...fadeUp(0.3 + index * 0.08)}>
-      <div className="bg-white dark:bg-card rounded-3xl border border-primary/8 p-4 shadow-sm hover:shadow-md hover:shadow-primary/8 transition-shadow duration-200">
-        <div className="flex items-start gap-4 mb-4">
-          {/* Thumbnail */}
-          <CourseThumbnail domain={course.domain} />
-
-          {/* Info */}
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-primary/70 uppercase tracking-wide mb-1 truncate">{course.domain}</p>
-            <p className="font-heading font-bold text-foreground leading-snug line-clamp-2 mb-1">
-              {course.title}
-            </p>
-            {nextLessonTitle ? (
-              <p className="text-xs text-muted-foreground">Next: {nextLessonTitle}</p>
-            ) : (
-              <p className="text-xs text-emerald-600 font-semibold">All lessons complete!</p>
-            )}
-          </div>
-        </div>
-
-        {/* Progress */}
-        {totalCount > 0 && (
-          <div className="mb-4">
-            <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
-              <span>{completedCount}/{totalCount} lessons</span>
-              <span className="font-bold text-foreground">{pct}%</span>
-            </div>
-            <div className="h-1.5 bg-primary/10 rounded-full overflow-hidden">
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{ flex: 1, height: "5px", borderRadius: "3px", background: "var(--muted)", overflow: "hidden" }}>
               <motion.div
-                className="h-full bg-primary rounded-full"
+                style={{ height: "100%", borderRadius: "3px", background: "var(--blue)" }}
                 initial={{ width: 0 }}
-                animate={{ width: `${pct}%` }}
-                transition={{ duration: 0.7, ease: "easeOut", delay: 0.3 + index * 0.08 }}
+                animate={{ width: `${coursePct}%` }}
+                transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
               />
             </div>
+            <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--blue)" }}>{coursePct}%</span>
           </div>
-        )}
+        </div>
 
-        {/* CTA */}
-        <Link href={href} onClick={() => trackEvent("course_card_resume_click", { courseId: course.id })}>
-          <motion.div whileTap={{ scale: 0.98 }}>
-            <Button className="w-full rounded-full bg-primary/10 hover:bg-primary text-primary hover:text-white font-semibold gap-2 cursor-pointer transition-colors h-10 border border-primary/15 hover:border-primary">
-              <Play className="w-3.5 h-3.5 fill-current" />
-              Continue Learning
-              <ArrowRight className="w-3.5 h-3.5 ml-auto" />
-            </Button>
-          </motion.div>
-        </Link>
+        <div
+          style={{
+            flexShrink: 0, zIndex: 1,
+            background: "var(--blue)", color: "#fff",
+            borderRadius: "var(--radius-lg)", padding: "8px 16px",
+            fontSize: "13px", fontWeight: 600, border: "none",
+            display: "flex", alignItems: "center", gap: "6px",
+          }}
+        >
+          Continue <ArrowRight style={{ width: "14px", height: "14px" }} />
+        </div>
       </div>
-    </motion.div>
+    </Link>
   );
 }
 
-// ─── RecommendedSection ───────────────────────────────────────────────────────
+// ─── CourseCard ───────────────────────────────────────────────────────────────
 
-const SUGGESTED: Array<{ label: string; desc: string; topic: string; gradient: string; Icon: LucideIcon }> = [
-  { label: "AI Marketing for Beginners", desc: "Build in-demand skills and grow your online presence.", topic: "AI marketing for beginners", gradient: "from-amber-400 to-orange-500", Icon: TrendingUp },
-  { label: "Python Programming", desc: "Learn to code from scratch with hands-on projects.", topic: "Python programming for beginners", gradient: "from-blue-500 to-indigo-600", Icon: Code2 },
-  { label: "UX/UI Design Basics", desc: "Design beautiful interfaces and improve user experience.", topic: "UX UI design fundamentals", gradient: "from-pink-400 to-violet-500", Icon: Palette },
-];
-
-function RecommendedSection({ vm }: { vm: DashboardVM }) {
-  if (vm.allCourses.length >= 3) return null;
-  const featured = SUGGESTED[0];
-  const FeaturedIcon = featured.Icon;
+function CourseCard({ data }: { data: ResumeCourse }) {
+  const { course, pct, completedCount, totalCount, nextLessonId, nextLessonTitle } = data;
+  const href = nextLessonId ? `/courses/${course.id}/lesson/${nextLessonId}` : `/courses/${course.id}`;
+  const { hue, label } = getDomainColor(course.domain);
+  const DomainIcon = getDomainIcon(course.domain);
 
   return (
-    <motion.div {...fadeUp(0.42)}>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-heading font-bold text-lg text-foreground flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-primary" />
-          Recommended for you
-        </h2>
-        <Button variant="ghost" size="sm" className="text-primary gap-1 cursor-pointer text-sm font-semibold h-8 px-3 hover:bg-primary/8">
-          View all <ChevronRight className="w-4 h-4" />
-        </Button>
+    <Link href={href} onClick={() => trackEvent("course_card_click", { courseId: course.id })}>
+      <div
+        style={{
+          ...panel,
+          overflow: "hidden",
+          cursor: "pointer",
+          transition: "border-color 0.2s, transform 0.2s, box-shadow 0.2s",
+          display: "flex",
+          flexDirection: "column",
+        }}
+        onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "var(--blue-border)"; el.style.transform = "translateY(-2px)"; el.style.boxShadow = "0 8px 28px oklch(0 0 0 / 0.12)"; }}
+        onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "var(--border)"; el.style.transform = "translateY(0)"; el.style.boxShadow = "none"; }}
+      >
+        {/* Header area with colored background */}
+        <div style={{
+          height: "80px", display: "flex", alignItems: "flex-end", padding: "12px",
+          position: "relative", overflow: "hidden",
+          background: `linear-gradient(135deg, oklch(0.18 0.04 ${hue}), oklch(0.12 0.02 ${hue}))`,
+        }}>
+          <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 70% 30%, oklch(0.53 0.23 ${hue} / 0.25), transparent 60%)` }} />
+          <DomainIcon style={{ width: "24px", height: "24px", color: "rgba(255,255,255,0.8)", position: "relative", zIndex: 1 }} />
+        </div>
+
+        <div style={{ padding: "12px 14px 14px", flex: 1, display: "flex", flexDirection: "column" }}>
+          <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: "4px" }}>
+            {label}
+          </div>
+          <div style={{ fontFamily: "var(--font-bricolage)", fontSize: "14px", fontWeight: 700, letterSpacing: "-0.2px", marginBottom: "8px", lineHeight: 1.3, flex: 1 }}>
+            {course.title}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "var(--muted-foreground)", marginBottom: "8px" }}>
+            <span>📚 {totalCount} lessons</span>
+            <span>{completedCount}/{totalCount}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
+            <span style={{ color: "var(--muted-foreground)" }}>{nextLessonTitle ? `Next: ${nextLessonTitle.slice(0, 20)}…` : "All done!"}</span>
+            <strong style={{ color: "var(--foreground)" }}>{pct}%</strong>
+          </div>
+          <div style={{ height: "4px", borderRadius: "2px", background: "var(--muted)", overflow: "hidden" }}>
+            <motion.div
+              style={{ height: "100%", borderRadius: "2px", background: "var(--blue)" }}
+              initial={{ width: 0 }}
+              animate={{ width: `${pct}%` }}
+              transition={{ duration: 0.7, ease: "easeOut", delay: 0.2 }}
+            />
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+// ─── NewCourseCard ────────────────────────────────────────────────────────────
+
+function NewCourseCard() {
+  return (
+    <Link href="/onboarding" onClick={() => trackEvent("new_course_click")}>
+      <div
+        style={{
+          ...panel,
+          border: "2px dashed var(--border)",
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center",
+          gap: "8px", cursor: "pointer", padding: "24px",
+          textAlign: "center",
+          transition: "border-color 0.2s, background 0.2s",
+          minHeight: "190px",
+        }}
+        onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "var(--blue-border)"; el.style.background = "var(--blue-muted)"; }}
+        onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "var(--border)"; el.style.background = "var(--card)"; }}
+      >
+        <div style={{ width: "40px", height: "40px", borderRadius: "12px", background: "var(--muted)", display: "grid", placeItems: "center", fontSize: "20px" }}>
+          ✦
+        </div>
+        <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--muted-foreground)" }}>Generate new course</div>
+        <div style={{ fontSize: "11px", color: "var(--muted-foreground)", opacity: 0.7 }}>AI-powered · 30 seconds</div>
+      </div>
+    </Link>
+  );
+}
+
+// ─── StreakPanel ──────────────────────────────────────────────────────────────
+
+function StreakPanel({ streak }: { streak: number }) {
+  const days = ["M", "T", "W", "T", "F", "S", "S"];
+  const today = new Date().getDay(); // 0=Sun, 1=Mon ...
+  const todayIdx = today === 0 ? 6 : today - 1; // convert to Mon=0 ... Sun=6
+
+  return (
+    <div style={panel}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+        <span style={{ fontFamily: "var(--font-bricolage)", fontWeight: 700, fontSize: "14px" }}>Daily Streak</span>
+        <span className="chip-streak">🔥 On Fire</span>
+      </div>
+      <div style={{ fontFamily: "var(--font-bricolage)", fontSize: "42px", fontWeight: 800, letterSpacing: "-2px", textAlign: "center", color: "var(--gold)" }}>
+        {streak}
+      </div>
+      <div style={{ textAlign: "center", fontSize: "12px", color: "var(--muted-foreground)", marginBottom: "14px" }}>
+        days in a row
+      </div>
+      <div style={{ display: "flex", gap: "5px", justifyContent: "center" }}>
+        {days.map((d, i) => {
+          const isToday = i === todayIdx;
+          const isDone = i < todayIdx && streak > 0;
+          return (
+            <div
+              key={i}
+              style={{
+                width: "28px", height: "28px", borderRadius: "8px",
+                display: "grid", placeItems: "center",
+                fontSize: "9px", fontWeight: 700,
+                background: isToday ? "var(--blue-muted)" : isDone ? "var(--gold-muted)" : "var(--muted)",
+                border: `1px solid ${isToday ? "var(--blue-border)" : isDone ? "var(--gold-border)" : "var(--border)"}`,
+                color: isToday ? "var(--blue)" : isDone ? "var(--gold)" : "var(--muted-foreground)",
+              }}
+            >
+              {d}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── WeeklyXpPanel ────────────────────────────────────────────────────────────
+
+const barHeights = [70, 45, 90, 55, 80, 25, 50];
+const barDays = ["M", "T", "W", "T", "F", "S", "S"];
+
+function WeeklyXpPanel({ weeklyXp, weeklyGoal }: { weeklyXp: number; weeklyGoal: number }) {
+  const pct = Math.min(100, Math.round((weeklyXp / weeklyGoal) * 100));
+  const today = new Date().getDay();
+  const todayIdx = today === 0 ? 6 : today - 1;
+
+  return (
+    <div style={panel}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontFamily: "var(--font-bricolage)", fontWeight: 700, fontSize: "14px" }}>Weekly XP</span>
+        <span style={{ fontSize: "12px", color: "var(--muted-foreground)" }}>{weeklyXp} / {weeklyGoal}</span>
       </div>
 
-      {/* Featured card — warm amber */}
-      <Link href={`/onboarding?topic=${encodeURIComponent(featured.topic)}`} onClick={() => trackEvent("recommended_featured_click", { topic: featured.topic })}>
+      <div style={{ marginTop: "10px", marginBottom: "4px", display: "flex", justifyContent: "space-between", fontSize: "11px" }}>
+        <span style={{ color: "var(--muted-foreground)" }}>Weekly goal</span>
+        <strong style={{ color: "var(--blue)" }}>{pct}%</strong>
+      </div>
+      <div style={{ height: "5px", borderRadius: "3px", background: "var(--muted)", overflow: "hidden" }}>
         <motion.div
-          whileHover={{ y: -2 }}
-          whileTap={{ scale: 0.98 }}
-          className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-3xl p-5 mb-3 cursor-pointer hover:shadow-md hover:shadow-amber-200/50 dark:hover:shadow-amber-900/20 transition-all duration-200"
-        >
-          <div className="flex items-start gap-4 mb-4">
-            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${featured.gradient} flex items-center justify-center flex-shrink-0 shadow-md`}>
-              <FeaturedIcon className="w-7 h-7 text-white" />
+          style={{ height: "100%", borderRadius: "3px", background: "var(--blue)" }}
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
+        />
+      </div>
+
+      {/* Bar chart */}
+      <div style={{ display: "flex", alignItems: "flex-end", gap: "5px", height: "56px", margin: "12px 0 6px" }}>
+        {barHeights.map((h, i) => (
+          <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
+            <div style={{ width: "100%", height: "56px", background: "var(--muted)", borderRadius: "4px 4px 0 0", position: "relative", overflow: "hidden" }}>
+              <div style={{
+                position: "absolute", bottom: 0, left: 0, right: 0,
+                height: `${h}%`, borderRadius: "4px 4px 0 0",
+                background: "var(--blue)",
+                opacity: i === todayIdx ? 1 : 0.6,
+              }} />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-heading font-bold text-foreground leading-snug mb-1">{featured.label}</p>
-              <p className="text-sm text-muted-foreground">{featured.desc}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <BookOpen className="w-3.5 h-3.5" />
-              Starts in 15 min · 12 lessons
+            <span style={{
+              fontSize: "9px", fontWeight: 600,
+              color: i === todayIdx ? "var(--blue)" : "var(--muted-foreground)",
+            }}>
+              {barDays[i]}
             </span>
           </div>
-          <Button className="rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold gap-2 cursor-pointer h-10 px-5 shadow-md shadow-amber-300/40">
-            Start Course
-            <ArrowRight className="w-4 h-4" />
-          </Button>
-        </motion.div>
-      </Link>
-    </motion.div>
+        ))}
+      </div>
+    </div>
   );
 }
 
-// ─── CreateCourseSection ──────────────────────────────────────────────────────
+// ─── ActivityPanel ────────────────────────────────────────────────────────────
 
-function CreateCourseSection() {
+interface ActivityItem { dot: string; text: React.ReactNode; time: string }
+
+function ActivityPanel({ recentItems }: { recentItems: ActivityItem[] }) {
   return (
-    <motion.div {...fadeUp(0.5)}>
-      <Link href="/onboarding" onClick={() => trackEvent("create_course_cta_click")}>
-        <motion.div
-          whileHover={{ y: -1 }}
-          whileTap={{ scale: 0.98 }}
-          className="bg-white dark:bg-card rounded-3xl border-2 border-dashed border-primary/25 p-5 flex items-center gap-4 cursor-pointer hover:border-primary/50 hover:bg-primary/3 transition-all duration-200 group"
-        >
-          <motion.div
-            className="w-14 h-14 rounded-2xl bg-primary/10 group-hover:bg-primary/15 flex items-center justify-center flex-shrink-0 transition-colors"
-            whileHover={{ rotate: 8 }}
-          >
-            <PlusCircle className="w-7 h-7 text-primary" />
-          </motion.div>
-          <div className="flex-1">
-            <p className="font-heading font-bold text-foreground mb-0.5">Create a New Course</p>
-            <p className="text-sm text-muted-foreground">Tell us your goal and AI will build a personalised plan.</p>
-          </div>
-        </motion.div>
-      </Link>
-      <div className="mt-3">
-        <Link href="/onboarding">
-          <Button className="w-full rounded-full bg-primary hover:bg-[#4338CA] text-white font-bold gap-2 cursor-pointer h-11 shadow-md shadow-primary/25">
-            Create Course
-            <Sparkles className="w-4 h-4" />
-          </Button>
-        </Link>
+    <div style={panel}>
+      <div style={{ fontFamily: "var(--font-bricolage)", fontWeight: 700, fontSize: "14px", marginBottom: "12px" }}>
+        Recent Activity
       </div>
-    </motion.div>
+      {recentItems.map((item, i) => (
+        <div
+          key={i}
+          style={{
+            display: "flex", alignItems: "center", gap: "10px",
+            padding: "7px 0",
+            borderBottom: i < recentItems.length - 1 ? "1px solid var(--border)" : "none",
+          }}
+        >
+          <div style={{ width: "7px", height: "7px", borderRadius: "50%", flexShrink: 0, background: item.dot }} />
+          <div style={{ fontSize: "12px", color: "var(--muted-foreground)", flex: 1, lineHeight: 1.4 }}>
+            {item.text}
+          </div>
+          <div style={{ fontSize: "10px", color: "var(--muted-foreground)", flexShrink: 0 }}>{item.time}</div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -601,86 +468,123 @@ function FreePlanBanner({ vm }: { vm: DashboardVM }) {
   if (vm.plan !== "free") return null;
   const remaining = Math.max(0, 2 - vm.coursesGeneratedThisMonth);
   return (
-    <motion.div {...fadeUp(0.56)}>
-      <div className="bg-gradient-to-r from-primary/8 to-violet-100 dark:to-violet-900/20 rounded-3xl border border-primary/15 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        <div className="flex-1">
-          <p className="font-semibold text-foreground text-sm">
-            {remaining === 0 ? "You've used your 2 free courses this month." : `${remaining} free course${remaining !== 1 ? "s" : ""} remaining this month.`}
-          </p>
-          <p className="text-xs text-muted-foreground mt-0.5">Upgrade to Pro for unlimited courses, PDF uploads, and more.</p>
-        </div>
-        <Link href="/settings?tab=billing">
-          <Button size="sm" className="rounded-full bg-primary text-white hover:bg-[#4338CA] shadow-md shadow-primary/25 whitespace-nowrap cursor-pointer" onClick={() => trackEvent("upgrade_banner_click")}>
-            Upgrade to Pro
-          </Button>
-        </Link>
+    <div
+      style={{
+        background: "var(--blue-muted)",
+        border: "1px solid var(--blue-border)",
+        borderRadius: "var(--radius-xl)",
+        padding: "16px 20px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "12px",
+        flexWrap: "wrap" as const,
+        marginBottom: "24px",
+      }}
+    >
+      <div>
+        <p style={{ fontWeight: 600, fontSize: "14px" }}>
+          {remaining === 0 ? "You've used your 2 free courses this month." : `${remaining} free course${remaining !== 1 ? "s" : ""} remaining this month.`}
+        </p>
+        <p style={{ fontSize: "12px", color: "var(--muted-foreground)", marginTop: "2px" }}>
+          Upgrade to Pro for unlimited courses, PDF uploads, and more.
+        </p>
       </div>
-    </motion.div>
+      <Link href="/settings?tab=billing">
+        <button
+          style={{
+            background: "var(--blue)", color: "#fff",
+            borderRadius: "var(--radius-lg)", padding: "8px 16px",
+            fontSize: "13px", fontWeight: 600, border: "none", cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
+          onClick={() => trackEvent("upgrade_banner_click")}
+        >
+          Upgrade to Pro
+        </button>
+      </Link>
+    </div>
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardClient(props: {
   profile: Profile | null; emailFallback: string; courses: Course[];
   completedLessonIds: string[]; weeklyXp: number; weeklyGoal: number; totalMinutesLearned: number;
 }) {
   const vm = useDashboardViewModel(props);
-  const { firstName, greeting, subline, nextLesson, activeCourses, completedCourses, allCourses, streak } = vm;
+  const { firstName, greeting, subline, xp, streak, weeklyXp, weeklyGoal, resumeCourses, lessonsCompleted, completedCourses } = vm;
 
-  const noCourses = allCourses.length === 0;
-  const allDone   = !noCourses && activeCourses.length === 0 && completedCourses.length > 0;
+  const activityItems: ActivityItem[] = resumeCourses.length > 0 ? [
+    { dot: "var(--emerald)", text: <span>Completed <strong style={{ color: "var(--foreground)", fontWeight: 600 }}>latest lesson</strong></span>, time: "2h ago" },
+    { dot: "var(--blue)", text: <span>Earned <strong style={{ color: "var(--foreground)", fontWeight: 600 }}>+80 XP</strong> this session</span>, time: "2h ago" },
+    { dot: "var(--gold)", text: <span>Unlocked badge <strong style={{ color: "var(--foreground)", fontWeight: 600 }}>On Fire 🔥</strong></span>, time: "1d ago" },
+    { dot: "var(--emerald)", text: <span>Completed <strong style={{ color: "var(--foreground)", fontWeight: 600 }}>a module</strong></span>, time: "2d ago" },
+  ] : [
+    { dot: "var(--blue)", text: <span>Welcome to <strong style={{ color: "var(--foreground)", fontWeight: 600 }}>Skillify</strong>!</span>, time: "just now" },
+  ];
 
   return (
-    /* Extend page background to lavender to match reference */
-    <div className="max-w-2xl mx-auto">
-      {/* Full-bleed lavender tint behind the content */}
-      <div className="bg-[#f5f3ff] dark:bg-transparent -mx-4 -mt-4 md:-mx-6 md:-mt-6 px-4 pt-4 md:px-6 md:pt-6 rounded-none pb-1">
-        <div className="max-w-2xl mx-auto space-y-4 pb-8">
-          <OnboardingTour />
+    <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+      <OnboardingTour />
 
-          {/* ── Header ────────────────────────────────────────────────── */}
-          <motion.div {...fadeUp(0)} className="flex items-start justify-between pt-1" data-tour="dashboard-greeting">
-            <div>
-              <h1 className="font-heading text-2xl font-extrabold text-foreground leading-tight">
-                {greeting}, {firstName}! 👋
-              </h1>
-              <p className="text-sm text-muted-foreground mt-0.5">{subline}</p>
-            </div>
-            {streak > 0 && (
-              <motion.div
-                animate={{ scale: [1, 1.12, 1] }}
-                transition={{ repeat: Infinity, repeatDelay: 3, duration: 0.55 }}
-                className="flex items-center gap-1.5 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 px-3 py-1.5 rounded-full text-sm font-bold flex-shrink-0 shadow-sm"
-              >
-                <Flame className="w-4 h-4" />
-                {streak}
-              </motion.div>
+      {/* Page header */}
+      <div style={{ marginBottom: "22px" }} data-tour="dashboard-greeting">
+        <h1 style={{ fontFamily: "var(--font-bricolage)", fontSize: "24px", fontWeight: 800, letterSpacing: "-0.5px", marginBottom: "4px" }}>
+          {greeting}, {firstName} 👋
+        </h1>
+        <p style={{ fontSize: "14px", color: "var(--muted-foreground)" }}>{subline}</p>
+      </div>
+
+      {/* Free plan banner */}
+      <FreePlanBanner vm={vm} />
+
+      {/* Stats row */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px", marginBottom: "22px" }} data-tour="dashboard-stats">
+        <StatCard icon="⚡" iconBg="var(--blue-muted)" value={xp} label="Total XP" delta="+12%" />
+        <StatCard icon="🔥" iconBg="var(--gold-muted)" value={streak} label="Day Streak" delta={streak > 0 ? `Best: ${streak}` : undefined} />
+        <StatCard icon="✓" iconBg="var(--emerald-muted)" value={lessonsCompleted} label="Lessons Done" />
+        <StatCard icon="🎓" iconBg="var(--rose-muted, oklch(0.65 0.18 10 / 0.16))" value={completedCourses.length} label="Courses Completed" />
+      </div>
+
+      {/* Continue banner */}
+      <ContinueBanner vm={vm} />
+
+      {/* Content grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 272px", gap: "20px", alignItems: "start" }} data-tour="dashboard-courses">
+
+        {/* Left: courses */}
+        <div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
+            <span style={{ fontFamily: "var(--font-bricolage)", fontWeight: 700, fontSize: "15px" }}>My Courses</span>
+            <Link href="/courses" style={{ fontSize: "13px", color: "var(--blue)", fontWeight: 600 }}>
+              View all →
+            </Link>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+            {resumeCourses.map((data) => (
+              <CourseCard key={data.course.id} data={data} />
+            ))}
+            {/* Fill remaining with new-course cards if < 2 courses */}
+            {resumeCourses.length < 2 && resumeCourses.length > 0 && <NewCourseCard />}
+            {resumeCourses.length === 0 ? (
+              <>
+                <NewCourseCard />
+                <NewCourseCard />
+                <NewCourseCard />
+              </>
+            ) : (
+              <NewCourseCard />
             )}
-          </motion.div>
+          </div>
+        </div>
 
-          {/* ── Hero card ──────────────────────────────────────────────── */}
-          {nextLesson  ? <ContinueHeroCard vm={vm} />  :
-           allDone     ? <AllDoneHeroCard />            :
-           noCourses   ? <WelcomeHeroCard />            : null}
-
-          {/* ── Today's Goal ────────────────────────────────────────── */}
-          <TodayGoalCard vm={vm} />
-
-          {/* ── Your Progress ───────────────────────────────────────── */}
-          <ProgressCard vm={vm} />
-
-          {/* ── Continue Learning ───────────────────────────────────── */}
-          <ContinueLearningSection vm={vm} />
-
-          {/* ── Recommended ─────────────────────────────────────────── */}
-          <RecommendedSection vm={vm} />
-
-          {/* ── Create New Course ────────────────────────────────────── */}
-          <CreateCourseSection />
-
-          {/* ── Free plan banner ─────────────────────────────────────── */}
-          <FreePlanBanner vm={vm} />
+        {/* Right: panels */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+          <StreakPanel streak={streak} />
+          <WeeklyXpPanel weeklyXp={weeklyXp} weeklyGoal={weeklyGoal} />
+          <ActivityPanel recentItems={activityItems} />
         </div>
       </div>
     </div>

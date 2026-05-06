@@ -1,37 +1,23 @@
 import type { Metadata } from "next";
-import { Outfit, Nunito, JetBrains_Mono, Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Bricolage_Grotesque, DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { THEME_KEY } from "@/lib/theme";
 import Script from "next/script";
 
-/* Primary typefaces */
-const outfit = Outfit({
-  variable: "--font-outfit",
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
   subsets: ["latin"],
   display: "swap",
   weight: ["400", "500", "600", "700", "800"],
 });
 
-const nunito = Nunito({
-  variable: "--font-nunito",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
   display: "swap",
   weight: ["300", "400", "500", "600", "700"],
-});
-
-/* Kept as fallbacks so any existing --font-inter / --font-jakarta references still resolve */
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const jakarta = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
-  subsets: ["latin"],
-  display: "swap",
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -52,7 +38,6 @@ export const metadata: Metadata = {
   },
 };
 
-// Inline script to apply theme before first paint — prevents white flash
 const themeScript = `
 (function() {
   try {
@@ -71,12 +56,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${outfit.variable} ${nunito.variable} ${inter.variable} ${jakarta.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${bricolage.variable} ${dmSans.variable} ${jetbrainsMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        {/* Anti-FOUC: beforeInteractive must be placed in body (not inside <head>) in App Router —
-            Next.js automatically injects it before hydration in the correct position */}
         <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: themeScript }} />
         <ThemeProvider>
           {children}

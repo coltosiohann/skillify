@@ -2,147 +2,161 @@
 
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import { Star, Quote } from "lucide-react";
 
 const testimonials = [
   {
-    name: "Sarah K.",
-    role: "Software Engineer",
-    avatar: "https://i.pravatar.cc/48?img=47",
-    stars: 5,
-    text: "I went from zero Python knowledge to building my first web scraper in 3 weeks. The AI course was insanely well-structured — exactly what I needed.",
-    featured: true,
+    initials: "MR",
+    name: "Marcus Reid",
+    role: "Product Manager, Stripe",
+    text: "I went from knowing nothing about options trading to confidently executing strategies in 6 weeks. The AI somehow knew exactly what I needed to understand and in what order.",
   },
   {
-    name: "Marcus R.",
-    role: "Marketing Manager",
-    avatar: "https://i.pravatar.cc/48?img=12",
-    stars: 5,
-    text: "Tried Duolingo, Coursera, YouTube — nothing stuck. Skillify's roadmap actually held me accountable. I'm now conversational in Spanish after 2 months.",
+    initials: "SK",
+    name: "Shreya Kapoor",
+    role: "CS Student, UC Berkeley",
+    text: "I uploaded my university lecture notes and Skillify built a course around them. I used it to prep for my ML final. It's genuinely better than any online course I've taken.",
   },
   {
-    name: "Aisha T.",
-    role: "Freelance Designer",
-    avatar: "https://i.pravatar.cc/48?img=32",
-    stars: 5,
-    text: "The gamification kept me coming back every day. Boss Battles are addictive! I've completed 4 courses and feel like a completely different professional.",
-  },
-  {
-    name: "Jordan L.",
-    role: "Product Manager",
-    avatar: "https://i.pravatar.cc/48?img=56",
-    stars: 5,
-    text: "Uploaded my existing notes as a PDF and Skillify built a course around them. Saved me weeks of organizing my learning. Absolutely genius feature.",
-  },
-  {
-    name: "Nina W.",
-    role: "University Student",
-    avatar: "https://i.pravatar.cc/48?img=44",
-    stars: 5,
-    text: "Used it to prep for my data structures exam. The AI quiz generator was better than anything my professor gave us. Got an A.",
-  },
-  {
-    name: "Carlos M.",
-    role: "Startup Founder",
-    avatar: "https://i.pravatar.cc/48?img=68",
-    stars: 5,
-    text: "I needed to learn financial modeling fast for investor meetings. Set a 2-week deadline and Skillify delivered exactly what I needed, nothing more.",
+    initials: "JL",
+    name: "Jamie Liu",
+    role: "Founder, Ambient Studio",
+    text: "The gamification doesn't feel childish — it actually makes me want to open the app every day. Three months in and I've completed 4 courses. That's more than the last 3 years on Coursera.",
   },
 ];
 
 export default function Testimonials() {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const inView = useInView(ref as React.RefObject<Element>, { once: true, margin: "-80px" });
 
   return (
-    <section id="testimonials" ref={ref} className="relative py-28 px-4 overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, #F7F8FC 0%, #EEF0FF 50%, #F7F8FC 100%)" }} />
-      <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full blur-[120px] pointer-events-none" style={{ background: "rgba(91,76,245,0.06)" }} />
-
-      <div className="relative max-w-6xl mx-auto">
-        {/* Header */}
+    <section
+      ref={ref}
+      style={{ padding: "96px 32px", background: "var(--background)" }}
+    >
+      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.55, ease: "easeOut" as const }}
-          className="text-center mb-16"
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          style={{ textAlign: "center" }}
         >
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold mb-6 border" style={{ background: "rgba(91,76,245,0.08)", borderColor: "rgba(91,76,245,0.20)", color: "#5B4CF5" }}>
-            Testimonials
-          </span>
-          <h2 className="font-heading text-4xl sm:text-5xl font-extrabold text-slate-900 mb-5">
-            Loved by{" "}
-            <span style={{ background: "linear-gradient(135deg, #5B4CF5, #818CF8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-              10,000+
-            </span>{" "}
-            Learners
-          </h2>
-          <p className="text-slate-500 text-lg max-w-xl mx-auto">
-            Real people, real results. See what our community has to say.
-          </p>
-        </motion.div>
-
-        {/* Featured + grid layout */}
-        <div className="grid lg:grid-cols-3 gap-5">
-          {/* Featured testimonial — spans 1 col, taller */}
-          <motion.div
-            initial={{ opacity: 0, y: 28 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.55, delay: 0.05, ease: "easeOut" as const }}
-            className="relative flex flex-col rounded-3xl p-7 overflow-hidden row-span-2"
+          <span
             style={{
-              background: "linear-gradient(145deg, #4338CA, #5B4CF5, #6D5FFA)",
-              boxShadow: "0 24px 60px rgba(91,76,245,0.30)",
+              display: "inline-block",
+              fontSize: "11px",
+              fontWeight: 700,
+              letterSpacing: "1px",
+              textTransform: "uppercase",
+              color: "var(--blue)",
+              marginBottom: "14px",
             }}
           >
-            {/* Decorative quote */}
-            <div className="absolute top-5 right-5 opacity-20">
-              <Quote className="w-16 h-16 text-white" />
-            </div>
-            <div className="absolute bottom-0 right-0 w-48 h-48 rounded-full blur-3xl pointer-events-none" style={{ background: "rgba(129,140,248,0.25)" }} />
+            From the Community
+          </span>
+          <h2
+            style={{
+              fontFamily: "var(--font-bricolage)",
+              fontSize: "clamp(32px, 3.5vw, 48px)",
+              fontWeight: 800,
+              letterSpacing: "-1.5px",
+              lineHeight: 1.1,
+              color: "var(--foreground)",
+            }}
+          >
+            People who actually use it.
+          </h2>
+        </motion.div>
 
-            <div className="flex gap-0.5 mb-5">
-              {[...Array(5)].map((_, j) => (
-                <Star key={j} className="w-4 h-4 fill-amber-300 text-amber-300" />
-              ))}
-            </div>
-            <p className="text-white text-lg leading-relaxed mb-8 relative z-10 flex-1">
-              &ldquo;{testimonials[0].text}&rdquo;
-            </p>
-            <div className="flex items-center gap-3 relative z-10">
-              <img src={testimonials[0].avatar} alt={testimonials[0].name} width={44} height={44} className="w-11 h-11 rounded-full object-cover border-2 border-white/30" />
-              <div>
-                <p className="font-bold text-white text-sm">{testimonials[0].name}</p>
-                <p className="text-sm" style={{ color: "rgba(255,255,255,0.65)" }}>{testimonials[0].role}</p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Remaining testimonials */}
-          {testimonials.slice(1).map((t, i) => (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "16px",
+            marginTop: "56px",
+          }}
+        >
+          {testimonials.map((t, i) => (
             <motion.div
               key={t.name}
               initial={{ opacity: 0, y: 28 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: 0.1 + (i + 1) * 0.08, ease: "easeOut" as const }}
-              className="flex flex-col bg-white rounded-2xl p-6 hover:-translate-y-1 transition-all duration-200 cursor-default"
+              transition={{ duration: 0.5, delay: 0.1 + i * 0.08, ease: "easeOut" }}
               style={{
-                border: "1px solid rgba(91,76,245,0.08)",
-                boxShadow: "0 4px 20px rgba(15,23,42,0.06)",
+                background: "var(--card)",
+                border: "1px solid var(--border)",
+                borderRadius: "20px",
+                padding: "28px",
+                transition: "border-color 0.2s, transform 0.2s, box-shadow 0.2s",
+                cursor: "default",
+              }}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.borderColor = "var(--blue-border)";
+                el.style.transform = "translateY(-3px)";
+                el.style.boxShadow = "0 12px 36px oklch(0 0 0 / 0.12)";
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.borderColor = "var(--border)";
+                el.style.transform = "translateY(0)";
+                el.style.boxShadow = "none";
               }}
             >
-              <div className="flex gap-0.5 mb-4">
-                {[...Array(t.stars)].map((_, j) => (
-                  <Star key={j} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              {/* Stars */}
+              <div style={{ display: "flex", gap: "3px", marginBottom: "16px" }}>
+                {[...Array(5)].map((_, j) => (
+                  <span key={j} style={{ color: "var(--gold)", fontSize: "14px" }}>★</span>
                 ))}
               </div>
-              <p className="text-sm text-slate-600 leading-relaxed mb-5 flex-1">&ldquo;{t.text}&rdquo;</p>
-              <div className="flex items-center gap-3">
-                <img src={t.avatar} alt={t.name} width={36} height={36} className="w-9 h-9 rounded-full object-cover" />
+
+              {/* Quote mark */}
+              <div
+                style={{
+                  color: "var(--blue)",
+                  fontFamily: "var(--font-bricolage)",
+                  fontSize: "28px",
+                  lineHeight: 0.8,
+                  marginBottom: "6px",
+                }}
+              >
+                &ldquo;
+              </div>
+
+              {/* Quote text */}
+              <p
+                style={{
+                  fontSize: "15px",
+                  lineHeight: 1.7,
+                  color: "var(--foreground)",
+                  marginBottom: "20px",
+                  fontStyle: "italic",
+                }}
+              >
+                {t.text}
+              </p>
+
+              {/* Author */}
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div
+                  style={{
+                    width: "38px",
+                    height: "38px",
+                    borderRadius: "50%",
+                    background: "var(--muted)",
+                    border: "1px solid var(--border)",
+                    display: "grid",
+                    placeItems: "center",
+                    fontWeight: 700,
+                    fontSize: "13px",
+                    color: "var(--muted-foreground)",
+                    flexShrink: 0,
+                  }}
+                >
+                  {t.initials}
+                </div>
                 <div>
-                  <p className="font-semibold text-slate-900 text-sm">{t.name}</p>
-                  <p className="text-xs text-slate-400">{t.role}</p>
+                  <div style={{ fontWeight: 600, fontSize: "14px", color: "var(--foreground)" }}>{t.name}</div>
+                  <div style={{ fontSize: "12px", color: "var(--muted-foreground)" }}>{t.role}</div>
                 </div>
               </div>
             </motion.div>
