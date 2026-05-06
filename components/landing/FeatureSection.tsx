@@ -254,7 +254,7 @@ function GamificationMockup() {
         Badges Earned
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: "8px" }}>
         {badges.map((b) => (
           <div
             key={b.name}
@@ -305,10 +305,11 @@ function FeatRow({ bg, label, heading, body, pills, mockup, flip, id }: FeatRowP
     <section id={id} style={{ background: bg, padding: "80px 32px" }}>
       <div
         ref={ref}
+        className="landing-feature-grid"
         style={{
           maxWidth: "1200px", margin: "0 auto",
-          display: "grid", gridTemplateColumns: "1fr 1fr",
-          gap: "80px", alignItems: "center",
+          display: "grid",
+          gap: "clamp(32px, 6vw, 80px)", alignItems: "center",
           direction: flip ? "rtl" : "ltr",
         }}
       >

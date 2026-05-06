@@ -153,8 +153,8 @@ export default function Hero() {
       <div style={{
         maxWidth: "1200px", margin: "0 auto", width: "100%",
         display: "grid", gridTemplateColumns: "1fr 1fr",
-        gap: "64px", alignItems: "center", position: "relative", zIndex: 1,
-      }}>
+        gap: "clamp(24px, 5vw, 64px)", alignItems: "center", position: "relative", zIndex: 1,
+      }} className="hero-grid">
         {/* Left — copy */}
         <div>
           <div className="hero-left-child hero-eyebrow-anim" style={{

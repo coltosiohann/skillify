@@ -542,7 +542,7 @@ export default function DashboardClient(props: {
       <FreePlanBanner vm={vm} />
 
       {/* Stats row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px", marginBottom: "22px" }} data-tour="dashboard-stats">
+      <div className="grid-stats-4" style={{ marginBottom: "22px" }} data-tour="dashboard-stats">
         <StatCard icon="⚡" iconBg="var(--blue-muted)" value={xp} label="Total XP" delta="+12%" />
         <StatCard icon="🔥" iconBg="var(--gold-muted)" value={streak} label="Day Streak" delta={streak > 0 ? `Best: ${streak}` : undefined} />
         <StatCard icon="✓" iconBg="var(--emerald-muted)" value={lessonsCompleted} label="Lessons Done" />
@@ -553,7 +553,7 @@ export default function DashboardClient(props: {
       <ContinueBanner vm={vm} />
 
       {/* Content grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 272px", gap: "20px", alignItems: "start" }} data-tour="dashboard-courses">
+      <div className="layout-sidebar-right-sm" data-tour="dashboard-courses">
 
         {/* Left: courses */}
         <div>
@@ -563,7 +563,7 @@ export default function DashboardClient(props: {
               View all →
             </Link>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+          <div className="grid-courses-3">
             {resumeCourses.map((data) => (
               <CourseCard key={data.course.id} data={data} />
             ))}

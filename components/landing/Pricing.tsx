@@ -104,8 +104,9 @@ export default function Pricing() {
         </motion.div>
 
         <div
+          className="landing-pricing-grid"
           style={{
-            display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
+            display: "grid",
             gap: "16px", marginTop: "56px", alignItems: "stretch",
           }}
         >

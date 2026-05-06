@@ -13,9 +13,9 @@ export default function Footer() {
     >
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <div
+          className="landing-footer-grid"
           style={{
             display: "grid",
-            gridTemplateColumns: "2fr 1fr 1fr 1fr",
             gap: "48px",
             marginBottom: "40px",
           }}

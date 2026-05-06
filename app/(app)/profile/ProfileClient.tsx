@@ -184,7 +184,7 @@ export default function ProfileClient({ profile, email, courses, progress }: Pro
         </button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: "24px", alignItems: "start" }}>
+      <div className="layout-profile">
 
         {/* ── Left column ── */}
         <div>
@@ -387,7 +387,7 @@ export default function ProfileClient({ profile, email, courses, progress }: Pro
                   {earnedCount} / {badges.length} unlocked
                 </span>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px" }}>
+              <div className="grid-badges-4">
                 {badges.map((badge, i) => (
                   <motion.div
                     key={badge.id}

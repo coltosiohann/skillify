@@ -77,7 +77,7 @@ export default function CourseView({ course, modules, completedLessonIds, quizAt
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
       {/* Breadcrumb row */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "var(--muted-foreground)" }}>
           <Link href="/dashboard" style={{ textDecoration: "none", color: "var(--muted-foreground)", transition: "color 0.15s" }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--foreground)"; }}
@@ -124,7 +124,7 @@ export default function CourseView({ course, modules, completedLessonIds, quizAt
           background: "linear-gradient(135deg, var(--blue-muted), transparent 55%)",
           pointerEvents: "none",
         }} />
-        <div style={{ position: "relative", display: "flex", alignItems: "flex-start", gap: "20px" }}>
+        <div style={{ position: "relative", display: "flex", alignItems: "flex-start", gap: "20px", flexWrap: "wrap" }}>
           <div style={{
             width: "60px", height: "60px", borderRadius: "18px",
             background: "var(--blue)", display: "grid", placeItems: "center",
@@ -188,7 +188,7 @@ export default function CourseView({ course, modules, completedLessonIds, quizAt
       </motion.div>
 
       {/* Main grid: modules + sidebar */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "24px", alignItems: "start" }}>
+      <div className="layout-sidebar-right">
 
         {/* Module list */}
         <div>

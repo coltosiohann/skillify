@@ -169,7 +169,7 @@ export default function LeaderboardClient({ allTime, weekly, currentUserId }: Pr
           </div>
 
           {/* Main grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: "24px", alignItems: "start" }}>
+          <div className="layout-leaderboard">
 
             {/* Left: filters + table */}
             <div>

@@ -82,7 +82,7 @@ export default function AchievementsClient({ profile, courses, progress }: Props
       </div>
 
       {/* Stats row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px", marginBottom: "22px" }}>
+      <div className="grid-stats-4" style={{ marginBottom: "22px" }}>
         {[
           { icon: "⚡", bg: "var(--blue-muted)", val: xp.toLocaleString("en-US"), lbl: "Total XP" },
           { icon: "🔥", bg: "var(--gold-muted)", val: streak, lbl: "Day Streak" },
@@ -181,7 +181,7 @@ export default function AchievementsClient({ profile, courses, progress }: Props
       {/* Badge grid */}
       <div>
         <h3 style={{ fontFamily: "var(--font-bricolage)", fontWeight: 700, fontSize: "15px", marginBottom: "14px" }}>Badges</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px" }}>
+        <div className="grid-badges-4">
           {badges.map((badge, i) => (
             <motion.div
               key={badge.id}

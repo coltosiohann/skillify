@@ -68,9 +68,9 @@ export default function Testimonials() {
         </motion.div>
 
         <div
+          className="landing-testimonials-grid"
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
             gap: "16px",
             marginTop: "56px",
           }}

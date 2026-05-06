@@ -13,7 +13,7 @@ const stats = [
 function Counter({ target, format, suffix }: { target: number; format: (n: number) => string; suffix: string }) {
   const [value, setValue] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref as React.RefObject<Element>, { once: true, margin: "-60px" });
+  const inView = useInView(ref, { once: true, margin: "-60px" });
 
   useEffect(() => {
     if (!inView) return;
@@ -47,12 +47,15 @@ export default function StatsBar() {
       }}
     >
       <div
+        className="landing-stats-bar"
         style={{
           maxWidth: "1200px",
           margin: "0 auto",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
+          flexWrap: "wrap",
+          gap: "0",
         }}
       >
         {stats.map((s, i) => (

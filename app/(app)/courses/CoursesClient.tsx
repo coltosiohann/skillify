@@ -90,7 +90,7 @@ export default function CoursesClient({ courses, completedLessonIds }: Props) {
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "22px" }}
+        style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "22px", flexWrap: "wrap", gap: "12px" }}
       >
         <div>
           <h1 style={{ fontFamily: "var(--font-bricolage)", fontSize: "24px", fontWeight: 800, letterSpacing: "-0.5px", marginBottom: "4px" }}>
@@ -153,7 +153,7 @@ export default function CoursesClient({ courses, completedLessonIds }: Props) {
               borderRadius: "10px", border: "1px solid var(--border)",
               background: "var(--muted)", color: "var(--foreground)",
               fontSize: "13px", fontFamily: "inherit", outline: "none",
-              width: "200px", transition: "border-color 0.2s",
+              width: "clamp(140px, 30vw, 200px)", transition: "border-color 0.2s",
             }}
             onFocus={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = "var(--blue-border)"; }}
             onBlur={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = "var(--border)"; }}
@@ -189,7 +189,7 @@ export default function CoursesClient({ courses, completedLessonIds }: Props) {
       )}
 
       {/* Course grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "14px" }}>
+      <div className="grid-courses-2">
         {filtered.map((course, i) => {
           const allLessons = course.modules.flatMap((m) => m.lessons ?? []);
           const completedCount = allLessons.filter((l) => completedSet.has(l.id)).length;

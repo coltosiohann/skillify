@@ -436,6 +436,175 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
+  /* ── Responsive layout helpers ── */
+  /* Page-level two-column layouts */
+  .layout-sidebar-right {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 24px;
+    align-items: start;
+  }
+  .layout-sidebar-right-sm {
+    display: grid;
+    grid-template-columns: 1fr 272px;
+    gap: 20px;
+    align-items: start;
+  }
+  .layout-profile {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  .layout-leaderboard {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 24px;
+    align-items: start;
+  }
+  /* Stat grids */
+  .grid-stats-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  .grid-stats-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .grid-courses-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  .grid-courses-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .grid-badges-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  @media (max-width: 767px) {
+    .layout-sidebar-right,
+    .layout-sidebar-right-sm,
+    .layout-leaderboard {
+      grid-template-columns: 1fr;
+    }
+    .layout-profile {
+      grid-template-columns: 1fr;
+    }
+    .grid-stats-4 {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .grid-stats-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .grid-courses-2 {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .grid-courses-3 {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .grid-badges-4 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    /* Lesson breadcrumb truncation */
+    .lesson-breadcrumb-title {
+      max-width: 160px !important;
+    }
+    /* Reduce horizontal padding on mobile */
+    .page-pad {
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .grid-stats-4 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .grid-badges-4 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* ── Landing page responsive ── */
+  .hero-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .landing-pricing-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  .landing-testimonials-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  .landing-howitworks-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+  .landing-footer-grid {
+    grid-template-columns: 2fr 1fr 1fr 1fr !important;
+  }
+  .landing-feature-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  @media (max-width: 900px) {
+    .landing-pricing-grid {
+      grid-template-columns: 1fr !important;
+      max-width: 420px !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+    }
+    .landing-howitworks-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+    .landing-testimonials-grid {
+      grid-template-columns: 1fr !important;
+    }
+    .landing-footer-grid {
+      grid-template-columns: 1fr 1fr !important;
+      gap: 32px !important;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .hero-grid {
+      grid-template-columns: 1fr !important;
+    }
+    .landing-feature-grid {
+      grid-template-columns: 1fr !important;
+    }
+    .landing-howitworks-grid {
+      grid-template-columns: 1fr 1fr !important;
+    }
+    .landing-footer-grid {
+      grid-template-columns: 1fr !important;
+    }
+    /* Hide hero browser mockup on mobile */
+    .hero-mockup-col {
+      display: none !important;
+    }
+    /* Full width stat pills on mobile */
+    .landing-stats-bar {
+      flex-wrap: wrap !important;
+      justify-content: center !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .landing-howitworks-grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
   /* ── Reduced motion ── */
   @media (prefers-reduced-motion: reduce) {
     * {

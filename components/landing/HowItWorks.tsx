@@ -74,9 +74,9 @@ export default function HowItWorks() {
           initial={{ opacity: 0, y: 24 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
+          className="landing-howitworks-grid"
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
             gap: "2px",
             marginTop: "56px",
             position: "relative",

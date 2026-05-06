@@ -355,7 +355,7 @@ export default function LessonView({
 
   return (
     <div style={{ paddingRight: "0" }} className="lg:pr-72">
-      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "32px 24px" }}>
+      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "24px 16px" }}>
 
         {/* Breadcrumb */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "var(--muted-foreground)", marginBottom: "20px", flexWrap: "wrap" }}>
@@ -369,7 +369,7 @@ export default function LessonView({
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--muted-foreground)"; }}
           >{courseTitle}</Link>
           <span>/</span>
-          <span style={{ color: "var(--foreground)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "260px" }}>{lesson.title}</span>
+          <span style={{ color: "var(--foreground)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "clamp(120px, 30vw, 260px)" }}>{lesson.title}</span>
         </div>
 
         {/* Module tag + action row */}
