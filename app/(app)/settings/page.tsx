@@ -8,24 +8,32 @@ export default async function SettingsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, avatar_url, plan, total_xp, current_streak, courses_generated_this_month, created_at, notification_preferences")
-    .eq("id", user.id)
-    .single();
-
-  // weekly_xp_goal added in migration 006 — fetch separately so base query never fails
-  const { data: extProfile } = await supabase
-    .from("profiles")
-    .select("weekly_xp_goal")
-    .eq("id", user.id)
-    .single();
+  const [profileRes, extProfileRes, subRes] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("full_name, avatar_url, plan, total_xp, current_streak, courses_generated_this_month, created_at, notification_preferences")
+      .eq("id", user.id)
+      .single(),
+    // weekly_xp_goal added in migration 006 — fetch separately so base query never fails
+    supabase
+      .from("profiles")
+      .select("weekly_xp_goal")
+      .eq("id", user.id)
+      .single(),
+    supabase
+      .from("subscriptions")
+      .select("status, plan, interval, current_period_end, cancel_at_period_end, trial_end")
+      .eq("user_id", user.id)
+      .in("status", ["trialing", "active", "past_due"])
+      .maybeSingle(),
+  ]);
 
   return (
     <SettingsClient
-      profile={profile ? { ...profile, weekly_xp_goal: (extProfile as { weekly_xp_goal?: number } | null)?.weekly_xp_goal ?? 200 } as never : null}
+      profile={profileRes.data ? { ...profileRes.data, weekly_xp_goal: (extProfileRes.data as { weekly_xp_goal?: number } | null)?.weekly_xp_goal ?? 200 } as never : null}
       email={user.email ?? ""}
       userId={user.id}
+      subscription={subRes.data ?? null}
     />
   );
 }

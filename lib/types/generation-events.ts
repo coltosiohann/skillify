@@ -8,7 +8,7 @@ export interface OutlineLessonStub {
   xp_reward: number;
   estimated_minutes: number;
   difficulty: "easy" | "standard" | "challenging";
-  learning_objective: string;
+  learning_objective?: string;
 }
 
 export interface OutlineModule {
@@ -68,6 +68,7 @@ export type LessonErrorEventData = {
 export type ErrorEventData = {
   message: string;
   fatal: boolean;
+  code?: string;
 };
 
 // Discriminated union for client-side SSE parsing

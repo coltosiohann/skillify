@@ -512,6 +512,7 @@ function FreePlanBanner({ vm }: { vm: DashboardVM }) {
 export default function DashboardClient(props: {
   profile: Profile | null; emailFallback: string; courses: Course[];
   completedLessonIds: string[]; weeklyXp: number; weeklyGoal: number; totalMinutesLearned: number;
+  subscription?: { status: string; plan: string; trial_end: string | null; current_period_end: string; cancel_at_period_end: boolean } | null;
 }) {
   const vm = useDashboardViewModel(props);
   const { firstName, greeting, subline, xp, streak, weeklyXp, weeklyGoal, resumeCourses, lessonsCompleted, completedCourses } = vm;

@@ -327,14 +327,55 @@ export type Database = {
           type: string;
           payload: Json;
           received_at: string;
+          processed_at: string | null;
+          processing_error: string | null;
         };
         Insert: {
           id: string;
           type: string;
           payload: Json;
           received_at?: string;
+          processed_at?: string | null;
+          processing_error?: string | null;
         };
-        Update: Record<string, never>;
+        Update: {
+          id?: string;
+          type?: string;
+          payload?: Json;
+          received_at?: string;
+          processed_at?: string | null;
+          processing_error?: string | null;
+        };
+        Relationships: [];
+      };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: string;
+          title: string;
+          message: string;
+          read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: string;
+          title: string;
+          message: string;
+          read?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          type?: string;
+          title?: string;
+          message?: string;
+          read?: boolean;
+          created_at?: string;
+        };
         Relationships: [];
       };
       invoices: {

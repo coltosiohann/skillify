@@ -5,8 +5,8 @@ import { motion, useInView } from "framer-motion";
 import Link from "next/link";
 
 export default function CTA() {
-  const ref = useRef(null);
-  const inView = useInView(ref as React.RefObject<Element>, { once: true, margin: "-80px" });
+  const ref = useRef<HTMLElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
     <section

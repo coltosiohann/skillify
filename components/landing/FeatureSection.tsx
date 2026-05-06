@@ -296,8 +296,8 @@ interface FeatRowProps {
 }
 
 function FeatRow({ bg, label, heading, body, pills, mockup, flip, id }: FeatRowProps) {
-  const ref = useRef(null);
-  const inView = useInView(ref as React.RefObject<Element>, { once: true, margin: "-80px" });
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
 
   const dotColor = { blue: "var(--blue)", gold: "var(--gold)", emerald: "var(--emerald)" };
 
